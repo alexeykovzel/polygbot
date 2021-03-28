@@ -17,6 +17,8 @@ dependencies {
     implementation platform('software.amazon.awssdk:bom:2.10.73')
     implementation 'software.amazon.awssdk:lambda'
 
+    implementation 'software.amazon.rdsdata:rds-data-api-client-library-java:1.0.5'
+
     implementation platform('com.amazonaws:aws-xray-recorder-sdk-bom:2.4.0')
     implementation 'com.amazonaws:aws-xray-recorder-sdk-core'
     implementation 'com.amazonaws:aws-xray-recorder-sdk-aws-sdk-core'

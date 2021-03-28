@@ -1,6 +1,7 @@
 package com.alexeykovzel.controller;
 
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -11,14 +12,14 @@ public interface IBotController {
      * escape markdown
      *
      * @param text text
-     * @return     text without markdown
+     * @return text without markdown
      */
     String escapeMarkdown(String text);
 
     /**
      * handle update
      *
-     * @param update                update
+     * @param update update
      * @throws TelegramApiException TelegramApiException
      */
     void handleUpdate(Update update) throws TelegramApiException;
@@ -29,6 +30,20 @@ public interface IBotController {
      * @param update update
      */
     void processInvalidCommandUpdate(Update update);
+
+    /**
+     * process message with text
+     *
+     * @param message message
+     */
+    void processTextMessage(Message message);
+
+    /**
+     * process message without text
+     *
+     * @param message message
+     */
+    void processNonTextMessage(Message message);
 
     /**
      * handle callback query

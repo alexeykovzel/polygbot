@@ -1,20 +1,23 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: An AWS Lambda application that calls the Lambda API.
+
 Resources:
+  #This is a Lambda function.
   LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: 'polygbot-function'
       Description: Java function
       Runtime: java8
-      CodeUri: build/distributions/polygbot-1.0-SNAPSHOT.zip
+      CodeUri: target/polygbot-1.0-SNAPSHOT.jar
       Handler: com.alexeykovzel.RequestHandler
       Role: !GetAtt LambdaExecutionRole.Arn
       MemorySize: 512
       Timeout: 12
       Tracing: Active
 
+  #This is a Lambda execution role.
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -34,9 +37,3 @@ Resources:
         - arn:aws:iam::aws:policy/AWSLambdaReadOnlyAccess
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: '/'
-
-  Version:
-    Type: AWS::Lambda::Version
-    Properties:
-      FunctionName: !Ref LambdaFunction
-      Description: v0

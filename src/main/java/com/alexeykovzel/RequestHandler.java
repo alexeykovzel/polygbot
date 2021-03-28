@@ -23,6 +23,10 @@ import static java.lang.System.getenv;
 public class RequestHandler implements RequestStreamHandler {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
+    public static final String RESOURCE_ARN = "arn:aws:rds:us-east-2:574318152798:cluster:polygbot-serverless-cluster";
+    private static final String HOST_NAME = "polygbot-cluster.cluster-cn8cy2ojsctj.us-east-2.rds.amazonaws.com";
+    private static final String PORT = "3306";
+    public static final String SECRET_ARN = "arn:aws:secretsmanager:us-east-2:574318152798:secret:RDSSecret-flIq4l3NCrdW-rEvOVb";
     LambdaAsyncClient lambdaClient = LambdaAsyncClient.create();
 
     public RequestHandler() {
@@ -41,6 +45,8 @@ public class RequestHandler implements RequestStreamHandler {
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
         PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)));
+
+
 
         JSONObject responseJson = new JSONObject();
         JSONTokener jsonTokener = new JSONTokener(reader);

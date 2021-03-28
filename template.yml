@@ -3,6 +3,43 @@ Transform: 'AWS::Serverless-2016-10-31'
 Description: An AWS Lambda application that calls the Lambda API.
 
 Resources:
+  #This is a Secret resource with a randomly generated password in its SecretString JSON.
+  RDSSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: This is a Secrets Manager secret for RDS DB cluster
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "admin"}'
+        GenerateStringKey: 'password'
+        PasswordLength: 16
+        ExcludeCharacters: '"@/\'
+
+  #This is a RDS cluster that stores data in the Aurora Serverless database.
+  RDSCluster:
+    Type: 'AWS::RDS::DBCluster'
+    Properties:
+      DatabaseName: polygbotDB
+      MasterUsername: !Sub '{{resolve:secretsmanager:${RDSSecret}::username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${RDSSecret}::password}}'
+      DBClusterIdentifier: polygbot-cluster
+      Engine: aurora
+      EngineVersion: 5.6.10a
+      EngineMode: serverless
+      ScalingConfiguration:
+        AutoPause: true
+        MinCapacity: 1
+        MaxCapacity: 2
+        SecondsUntilAutoPause: 300
+
+  #This is a Secret target attachment that completes the final link between the RDS secret and the RDS cluster.
+  SecretAttachment:
+    Type: "AWS::SecretsManager::SecretTargetAttachment"
+    Properties:
+      SecretId: !Ref RDSSecret
+      TargetId: !Ref RDSCluster
+      TargetType: AWS::RDS::DBCluster
+
+  #This is an API Gateway with a Lambda Integration.
   ApiGatewayRestApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -13,6 +50,7 @@ Resources:
           - EDGE
       Name: polygbot-api
 
+  #This is an API Gateway resource.
   ApiGatewayResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -20,6 +58,7 @@ Resources:
       PathPart: 'polygbot'
       RestApiId: !Ref ApiGatewayRestApi
 
+  #This is an API Gateway method.
   ApiGatewayMethod:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -38,13 +77,14 @@ Resources:
       ResourceId: !Ref ApiGatewayResource
       RestApiId: !Ref ApiGatewayRestApi
 
+  #This is an API Gateway model.
   ApiGatewayModel:
     Type: AWS::ApiGateway::Model
     Properties:
       ContentType: 'application/json'
       RestApiId: !Ref ApiGatewayRestApi
       Schema: { }
-
+  #This is an API Gateway stage.
   ApiGatewayStage:
     Type: AWS::ApiGateway::Stage
     Properties:
@@ -53,6 +93,7 @@ Resources:
       RestApiId: !Ref ApiGatewayRestApi
       StageName: 'v0'
 
+  #This is an API Gateway deployment.
   ApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: ApiGatewayMethod
@@ -60,6 +101,7 @@ Resources:
       Description: Lambda API Deployment
       RestApiId: !Ref ApiGatewayRestApi
 
+  #This is an API Gateway IAM role.
   ApiGatewayIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -84,6 +126,7 @@ Resources:
                 Action: 'lambda:*'
                 Resource: !GetAtt LambdaFunction.Arn
 
+  #This is a Lambda function.
   LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -99,6 +142,7 @@ Resources:
       Layers:
         - !Ref Libs
 
+  #This is a Lambda execution role.
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -119,12 +163,14 @@ Resources:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: '/'
 
+  #This is a Lambda function version.
   Version:
     Type: AWS::Lambda::Version
     Properties:
       FunctionName: !Ref LambdaFunction
       Description: v0
 
+  #These are Lambda function libs.
   Libs:
     Type: AWS::Serverless::LayerVersion
     Properties:

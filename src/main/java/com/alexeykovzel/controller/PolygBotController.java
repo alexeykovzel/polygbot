@@ -5,7 +5,6 @@ import com.alexeykovzel.commandRegistry.command.HelloCommand;
 import com.alexeykovzel.commandRegistry.command.HelpCommand;
 import com.alexeykovzel.commandRegistry.command.StartCommand;
 import com.alexeykovzel.service.Emoji;
-import com.amazonaws.services.lambda.runtime.Context;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,9 +18,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public class PolygBotController extends BotController {
     private static final Properties properties = new Properties();
@@ -91,108 +88,129 @@ public class PolygBotController extends BotController {
     @Override
     public void processNonCommandUpdate(Update update) {
         Message message = update.getMessage();
-        String chatId = String.valueOf(message.getChatId());
-        if (message.hasText()) {
-            String messageText = message.getText();
-            Document doc;
-            StringBuilder response = new StringBuilder();
-            try {
-                String searchQuery = "https://www.collinsdictionary.com/dictionary/english/" + toSearchForm(messageText);
-                doc = Jsoup.connect(searchQuery).get();
-                try {
-                    Element body = doc.body();
-                    body.getElementsByClass("hi rend-sup").remove();
-                    String trueTerm = body.getElementsByClass("orth").first().text();
-                    Elements defList = body.getElementsByClass("definitions").first().getElementsByClass("hom");
-
-                    // Add definitions list
-                    if (!defList.isEmpty()) {
-                        List<String> defTextList = new ArrayList<>();
-                        for (Element defElement : defList) {
-                            String defText = getDefText(defElement);
-                            if (defText != null) {
-                                defTextList.add(defText);
-                                if (defTextList.size() == 2) {
-                                    break;
-                                }
-                            }
-                        }
-                        for (String text : defTextList) {
-                            response.append(text);
-                        }
-                    }
-
-                    // Add example list
-                    Elements exampleList = body.getElementsByClass("quote");
-                    if (!exampleList.isEmpty()) {
-                        response.append("*EXAMPLES*\n\n");
-                        StringBuilder examples = new StringBuilder();
-                        int examplesNumber = 3;
-                        if (exampleList.size() >= examplesNumber) {
-                            for (int i = 0; i <= examplesNumber - 1; i++) {
-                                examples.append("- ").append(exampleList.get(i).text()).append("\n");
-                            }
-                        } else {
-                            for (int i = 0; i <= exampleList.size() - 1; i++) {
-                                examples.append("- ").append(exampleList.get(i).text()).append("\n");
-                            }
-                        }
-                        response.append(escapeMarkdown(examples.toString()));
-                    }
-                    response.append("\n[More](").append(searchQuery).append(") about '*").append(trueTerm).append("*'");
-
-                    sendMsg(chatId, response.toString());
-//                        if (!WordHome.isDublicate(chatId, trueTerm)) {
-                    sendMsg(chatId, "Would you like to add '*" + trueTerm + "*' to your word list?", getWordAddingReplyMarkup(trueTerm));
-//                        }
-                } catch (NullPointerException e) {
-                    sendMsg(chatId, "Ahh, I don't know what is '*" + messageText + "*' " + Emoji.DISAPPOINTED_BUT_RELIEVED_FACE);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        if (!message.hasText()) {
+            processNonTextMessage(message);
         } else {
-            sendMsg(chatId, "Send pls text");
+            processTextMessage(message);
         }
     }
 
-    private String getDefText(Element def) {
-        StringBuilder defText = new StringBuilder();
-        try {
-            try {
-                String partOfSpeech = def.getElementsByClass("pos").first().text();
-                defText.append("*[").append(escapeMarkdown(partOfSpeech.toUpperCase())).append("]* ");
-            } catch (Exception ignored) {
-            }
-            defText.append(def.getElementsByClass("def").first().text()).append("\n\n");
-        } catch (Exception ignored) {
-            return null;
-        }
+    @Override
+    public void processNonTextMessage(Message message) {
+        String chatId = message.getChatId().toString();
+        sendMsg(chatId, "Send pls text");
+    }
 
+    @Override
+    public void processTextMessage(Message message) {
+        String chatId = message.getChatId().toString();
+        String messageText = message.getText();
+        Document doc;
+        try {
+            String searchQuery = "https://www.collinsdictionary.com/dictionary/english/" + toSearchForm(messageText);
+            doc = Jsoup.connect(searchQuery).get();
+            try {
+                Element body = doc.body();
+                String origTerm = body.getElementsByClass("orth").first().text();
+
+                // send term info message
+                sendMsg(chatId, buildTermInfoMessage(body, origTerm, searchQuery).toString());
+
+                // send message query to add a term to user local vocabulary
+//                    if (!WordHome.isDublicate(chatId, trueTerm)) {
+                sendMsg(chatId, "Would you like to add '*" + origTerm + "*' to your local vocabulary?", buildWordAddReplyMarkup(origTerm));
+//                    }
+            } catch (NullPointerException e) {
+                sendMsg(chatId, "Ahh, I don't know what is '*" + messageText + "*' " + Emoji.DISAPPOINTED_BUT_RELIEVED_FACE);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private InlineKeyboardMarkup buildWordAddReplyMarkup(String wordText) {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+
+        List<List<InlineKeyboardButton>> rowList = Collections.singletonList(
+                Arrays.asList(
+                        new InlineKeyboardButton().setText("Actually, I do!").setCallbackData("saveWord@" + wordText),
+                        new InlineKeyboardButton().setText("Not really...").setCallbackData("notSaveWord@" + wordText)
+                )
+        );
+
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        return inlineKeyboardMarkup;
+    }
+
+    private StringBuilder buildTermInfoMessage(Element body, String origTerm, String searchQuery) {
+        StringBuilder response = new StringBuilder();
+        Elements defList = body.getElementsByClass("hom");
+        Elements examplesList = body.getElementsByClass("quote");
+
+        // Add 'definitions' section
+        response.append(getDefSection(defList, 2));
+
+        // Add 'examples' section
+        response.append(getExamplesSection(examplesList, 3));
+
+        // Add 'more' section
+        response.append("\n[More](").append(searchQuery).append(") about '*").append(origTerm).append("*'");
+
+        return response;
+    }
+
+    private StringBuilder getDefSection(Elements defList, int maxValue) {
+        StringBuilder defSection = new StringBuilder();
+        if (!defList.isEmpty()) {
+
+            if (defList.size() >= maxValue) {
+                for (int i = 0; i < maxValue; i++) {
+                    defSection.append(getDefText(defList.get(i)));
+                }
+            } else {
+                for (Element defElement : defList) {
+                    defSection.append(getDefText(defElement));
+                }
+            }
+        }
+        return defSection;
+    }
+
+    private String getDefText(Element defSection) {
+        StringBuilder defText = new StringBuilder();
+
+        Element defElement = defSection.getElementsByClass("def").first();
+        if (defElement != null) {
+            Element posElement = defSection.getElementsByClass("pos").first();
+            if (posElement != null) {
+                defText.append("*[").append(escapeMarkdown(posElement.text().toUpperCase())).append("]* ");
+            }
+            defText.append(defElement.text()).append("\n\n");
+        }
         return defText.toString();
+    }
+
+    private StringBuilder getExamplesSection(Elements examplesList, int maxValue) {
+        StringBuilder examplesSection = new StringBuilder();
+
+        if (!examplesList.isEmpty()) {
+            examplesSection.append("*EXAMPLES*\n\n");
+            StringBuilder exampleSection = new StringBuilder();
+            if (examplesList.size() >= maxValue) {
+                for (int i = 0; i < maxValue; i++) {
+                    exampleSection.append("- ").append(examplesList.get(i).text()).append("\n");
+                }
+            } else {
+                for (Element exampleElement : examplesList) {
+                    exampleSection.append("- ").append(exampleElement.text()).append("\n");
+                }
+            }
+            examplesSection.append(escapeMarkdown(exampleSection.toString()));
+        }
+        return examplesSection;
     }
 
     private String toSearchForm(String text) {
         return text.toLowerCase().replace(" ", "-");
-    }
-
-    private InlineKeyboardMarkup getWordAddingReplyMarkup(String wordText) {
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<InlineKeyboardButton> row1 = new ArrayList<>();
-
-        InlineKeyboardButton button1 = new InlineKeyboardButton();
-        button1.setText("Actually, I do!");
-        button1.setCallbackData("saveWord@" + wordText);
-
-        InlineKeyboardButton button2 = new InlineKeyboardButton();
-        button2.setText("Not really...");
-        button2.setCallbackData("notSaveWord@" + wordText);
-
-        row1.add(button1);
-        row1.add(button2);
-        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        rowList.add(row1);
-        inlineKeyboardMarkup.setKeyboard(rowList);
-        return inlineKeyboardMarkup;
     }
 }
