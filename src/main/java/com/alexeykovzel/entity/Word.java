@@ -3,10 +3,19 @@ package com.alexeykovzel.entity;
 import java.sql.Timestamp;
 
 public class Word {
+    private String wordId;
     private String chatId;
-    private String wordText;
+    private String stringValue;
     private double Retrievability;
     private Timestamp timestamp;
+
+    public String getWordId() {
+        return wordId;
+    }
+
+    public void setWordId(String wordId) {
+        this.wordId = wordId;
+    }
 
     public Timestamp getTimestamp() {
         return timestamp;
@@ -24,12 +33,12 @@ public class Word {
         this.chatId = chatId;
     }
 
-    public String getWordText() {
-        return wordText;
+    public String getStringValue() {
+        return stringValue;
     }
 
-    public void setWordText(String wordText) {
-        this.wordText = wordText;
+    public void setStringValue(String stringValue) {
+        this.stringValue = stringValue;
     }
 
     public double getRetrievability() {
@@ -47,8 +56,9 @@ public class Word {
     @Override
     public String toString() {
         return "Word{" +
-                "chatId='" + chatId + '\'' +
-                ", wordText='" + wordText + '\'' +
+                "wordId='" + wordId + '\'' +
+                ", chatId='" + chatId + '\'' +
+                ", stringValue='" + stringValue + '\'' +
                 ", Retrievability=" + Retrievability +
                 ", timestamp=" + timestamp +
                 '}';

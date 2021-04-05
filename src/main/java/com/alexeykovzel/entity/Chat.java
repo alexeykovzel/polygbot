@@ -1,11 +1,15 @@
 package com.alexeykovzel.entity;
 
 public class Chat {
-    private String id;
-    private String firstName;
-    private String lastName;
-    private String username;
-    private double memoryStability;
+    String id;
+    String firstName;
+    String lastName;
+    String username;
+    double memoryStability;
+
+    public Chat(String id) {
+        this.id = id;
+    }
 
     public String getId() {
         return id;

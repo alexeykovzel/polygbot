@@ -6,7 +6,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
@@ -18,8 +17,8 @@ import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class onNonCommandUpdateTest {
@@ -39,7 +38,7 @@ public class onNonCommandUpdateTest {
 
     @Test
     public void onNonCommandUpdate() {
-        /*String[] messageTexts = {"not really", "hello", "mam", "vocabulary", "city"};
+        String[] messageTexts = {"test"};
 
         Document doc;
         for (String messageText : messageTexts) {
@@ -54,16 +53,16 @@ public class onNonCommandUpdateTest {
                     sendMsg(chatId, buildTermInfoMessage(body, origTerm, searchQuery).toString());
 
                     // send message query to add a term to user local vocabulary
-                    if (!WordHome.isDublicate(chatId, trueTerm)) {
+//                    if (!WordHome.isDublicate(chatId, trueTerm)) {
                     sendMsg(chatId, "Would you like to add '*" + origTerm + "*' to your word list?", buildWordAddReplyMarkup(origTerm));
-                    }
+//                    }
                 } catch (NullPointerException e) {
                     sendMsg(chatId, "Ahh, I don't know what is '*" + messageText + "*' " + Emoji.DISAPPOINTED_BUT_RELIEVED_FACE);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }*/
+        }
     }
 
     private String getDefText(Element defSection) {
@@ -84,7 +83,6 @@ public class onNonCommandUpdateTest {
     private StringBuilder getDefSection(Elements defList, int maxValue) {
         StringBuilder defSection = new StringBuilder();
         if (!defList.isEmpty()) {
-
             if (defList.size() >= maxValue) {
                 for (int i = 0; i < maxValue; i++) {
                     defSection.append(getDefText(defList.get(i)));
@@ -142,13 +140,13 @@ public class onNonCommandUpdateTest {
 
     private InlineKeyboardMarkup buildWordAddReplyMarkup(String wordText) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
 
-        List<InlineKeyboardButton> row1 = Arrays.asList(
-                new InlineKeyboardButton().setText("Actually, I do!").setCallbackData("saveWord@" + wordText),
-                new InlineKeyboardButton().setText("Not really...").setCallbackData("notSaveWord@" + wordText)
+        List<List<InlineKeyboardButton>> rowList = Collections.singletonList(
+                Arrays.asList(
+                        new InlineKeyboardButton().setText("Actually, I do!").setCallbackData("saveWord@" + wordText),
+                        new InlineKeyboardButton().setText("Not really...").setCallbackData("notSaveWord@" + wordText)
+                )
         );
-        rowList.add(row1);
 
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;

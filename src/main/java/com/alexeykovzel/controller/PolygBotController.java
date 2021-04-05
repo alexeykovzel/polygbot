@@ -73,6 +73,8 @@ public class PolygBotController extends BotController {
         }
         switch (command) {
             case "saveWord":
+
+                sendMsg(chatId, "Saved successfully!");
                     /*if (!WordHome.isDublicate(chatId, commandQuery)) {
                         assert commandQuery != null;
                         WordHome.saveWord(chatId, commandQuery, 0.7);

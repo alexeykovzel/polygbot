@@ -84,6 +84,7 @@ Resources:
       ContentType: 'application/json'
       RestApiId: !Ref ApiGatewayRestApi
       Schema: { }
+
   #This is an API Gateway stage.
   ApiGatewayStage:
     Type: AWS::ApiGateway::Stage
@@ -163,7 +164,7 @@ Resources:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: '/'
 
-  #This is a Lambda function version.
+  #This is a Lambda function version.толерантная
   Version:
     Type: AWS::Lambda::Version
     Properties:

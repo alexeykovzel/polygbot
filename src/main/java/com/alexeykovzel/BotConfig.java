@@ -1,24 +1,19 @@
 package com.alexeykovzel;
 
 public class BotConfig {
-    private static final String linkDB = "";
-    private static final String controllerDB = "";
-    private static final String userDB = "";
-    private static final String passwordDB = "";
+    private static final String RESOURCE_ARN = "arn:aws:rds:us-east-2:574318152798:cluster:polygbot-cluster";
+    private static final String SECRET_ARN = "arn:aws:secretsmanager:us-east-2:574318152798:secret:RDSSecret-flIq4l3NCrdW-rEvOVb";
+    private static final String DB_NAME = "polygbotDB";
 
-    public static String getLinkDB() {
-        return linkDB;
+    public static String getResourceArn() {
+        return RESOURCE_ARN;
     }
 
-    public static String getControllerDB() {
-        return controllerDB;
+    public static String getSecretArn() {
+        return SECRET_ARN;
     }
 
-    public static String getUserDB() {
-        return userDB;
-    }
-
-    public static String getPasswordDB() {
-        return passwordDB;
+    public static String getDbName() {
+        return DB_NAME;
     }
 }
