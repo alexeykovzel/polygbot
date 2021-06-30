@@ -1,4 +1,4 @@
-package com.alexeykovzel.controller;
+package com.alexeykovzel.handler;
 
 import com.alexeykovzel.commandRegistry.CommandRegistry;
 import com.alexeykovzel.commandRegistry.command.HelloCommand;
@@ -20,19 +20,26 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.io.IOException;
 import java.util.*;
 
-public class PolygBotController extends BotController {
+public class PolygBotHandler extends BotHandler {
     private static final Properties properties = new Properties();
-    private static PolygBotController polygBotController;
+    private static PolygBotHandler polygBotController;
+    private final String botToken;
 
-    public static synchronized PolygBotController getInstance(String botUsername, String botToken) {
+    @Override
+    public String getBotToken() {
+        return botToken;
+    }
+
+    public static synchronized PolygBotHandler getInstance(String botUsername, String botToken) {
         if (polygBotController == null) {
-            polygBotController = new PolygBotController(botUsername, botToken);
+            polygBotController = new PolygBotHandler(botUsername, botToken);
         }
         return polygBotController;
     }
 
-    public PolygBotController(String botUsername, String botToken) {
-        absSender = absSender(botToken);
+    public PolygBotHandler(String botUsername, String botToken) {
+        this.botToken = botToken;
+
         commandRegistry = new CommandRegistry(true, botUsername);
         HelpCommand helpCommand = new HelpCommand(commandRegistry);
         commandRegistry.register(helpCommand);
@@ -73,8 +80,7 @@ public class PolygBotController extends BotController {
         }
         switch (command) {
             case "saveWord":
-
-                sendMsg(chatId, "Saved successfully!");
+                sendMsg(chatId, "I will do my best!" + Emoji.SMILING_FACE_WITH_OPEN_MOUTH_AND_SMILING_EYES);
                     /*if (!WordHome.isDublicate(chatId, commandQuery)) {
                         assert commandQuery != null;
                         WordHome.saveWord(chatId, commandQuery, 0.7);
@@ -135,13 +141,20 @@ public class PolygBotController extends BotController {
 
         List<List<InlineKeyboardButton>> rowList = Collections.singletonList(
                 Arrays.asList(
-                        new InlineKeyboardButton().setText("Actually, I do!").setCallbackData("saveWord@" + wordText),
-                        new InlineKeyboardButton().setText("Not really...").setCallbackData("notSaveWord@" + wordText)
+                        createInlineKeyboardButton("Actually, I do!", "saveWord@" + wordText),
+                        createInlineKeyboardButton("Not really...", "notSaveWord@" + wordText)
                 )
         );
 
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;
+    }
+
+    private InlineKeyboardButton createInlineKeyboardButton(String text, String callbackData) {
+        InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
+        inlineKeyboardButton.setText(text);
+        inlineKeyboardButton.setCallbackData(callbackData);
+        return inlineKeyboardButton;
     }
 
     private StringBuilder buildTermInfoMessage(Element body, String origTerm, String searchQuery) {
@@ -156,7 +169,7 @@ public class PolygBotController extends BotController {
         response.append(getExamplesSection(examplesList, 3));
 
         // Add 'more' section
-        response.append("\n[More](").append(searchQuery).append(") about '*").append(origTerm).append("*'");
+        response.append("[More](").append(searchQuery).append(") about '*").append(origTerm).append("*'");
 
         return response;
     }
@@ -197,17 +210,17 @@ public class PolygBotController extends BotController {
 
         if (!examplesList.isEmpty()) {
             examplesSection.append("*EXAMPLES*\n\n");
-            StringBuilder exampleSection = new StringBuilder();
+            StringBuilder examples = new StringBuilder();
             if (examplesList.size() >= maxValue) {
                 for (int i = 0; i < maxValue; i++) {
-                    exampleSection.append("- ").append(examplesList.get(i).text()).append("\n");
+                    examples.append("- ").append(examplesList.get(i).text()).append("\n");
                 }
             } else {
                 for (Element exampleElement : examplesList) {
-                    exampleSection.append("- ").append(exampleElement.text()).append("\n");
+                    examples.append("- ").append(exampleElement.text()).append("\n");
                 }
             }
-            examplesSection.append(escapeMarkdown(exampleSection.toString()));
+            examplesSection.append(escapeMarkdown(examples.toString())).append("\n");
         }
         return examplesSection;
     }

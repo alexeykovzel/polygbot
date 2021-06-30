@@ -1,9 +1,8 @@
 package com.alexeykovzel.repository;
 
+import com.alexeykovzel.entity.Chat;
+import com.amazon.rdsdata.client.RdsDataClient;
 import com.amazonaws.services.rdsdata.AWSRDSDataClient;
-import com.amazonaws.services.rdsdata.model.ExecuteStatementRequest;
-import com.amazonaws.services.rdsdata.model.ExecuteStatementResult;
-import com.amazonaws.services.rdsdata.model.Field;
 
 import java.util.List;
 import java.util.UUID;
@@ -11,33 +10,33 @@ import java.util.UUID;
 public class ChatRepository extends Repository {
 
     public static void addChat(String firstName, String lastName, String username, Double memoryStability) {
-        rdsData = AWSRDSDataClient.builder().build();
-        String uuid = UUID.randomUUID().toString();
-        String sql = String.format("insert into chat(id, first_name, last_name, username, memory_stability) values ('%s', '%s', '%s', '%s', %s)",
-                uuid, firstName, lastName, username, memoryStability);
+        /*client = RdsDataClient.builder()
+                .rdsDataService(AWSRDSDataClient.builder().build())
+                .database(DB_NAME)
+                .secretArn(SECRET_ARN)
+                .resourceArn(RESOURCE_ARN).build();*/
 
-        String transactionId = beginTransaction();
-        executeStatement(transactionId, sql);
-        commitTransaction(transactionId);
+        String uuid = UUID.randomUUID().toString();
+
+        client.forSql("INSERT INTO chat(id, first_name, last_name, username, memory_stability) " +
+                "VALUES(:id, :firstName, :lastName, :username, :memoryStability)")
+                .withParameter("id", uuid)
+                .withParameter("firstName", firstName)
+                .withParameter("lastName", lastName)
+                .withParameter("username", username)
+                .withParameter("memoryStability", memoryStability)
+                .execute();
     }
 
-    public static void getAllChats() {
-        rdsData = AWSRDSDataClient.builder().build();
-        String sql = "select * from chat";
-        ExecuteStatementResult result = executeStatement(sql);
+    public static List<Chat> getAllChats() {
+        client = RdsDataClient.builder()
+                .rdsDataService(AWSRDSDataClient.builder().build())
+                .database(DB_NAME)
+                .secretArn(SECRET_ARN)
+                .resourceArn(RESOURCE_ARN).build();
 
-        for (List<Field> fields : result.getRecords()) {
-            String stringValue = fields.get(0).getStringValue();
-            String firstName = fields.get(1).getStringValue();
-            String lastName = fields.get(2).getStringValue();
-            String username = fields.get(3).getStringValue();
-            Double memoryStability = fields.get(4).getDoubleValue();
-
-            System.out.println("String value: " + stringValue + "\n"
-                    + "First name: " + firstName + "\n"
-                    + "Last name: " + lastName + "\n"
-                    + "Username: " + username + "\n"
-                    + "Memory Stability: " + memoryStability + "\n");
-        }
+        return client.forSql("SELECT * FROM chat")
+                .execute()
+                .mapToList(Chat.class);
     }
 }

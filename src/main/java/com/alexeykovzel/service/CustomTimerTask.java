@@ -1,6 +1,7 @@
 package com.alexeykovzel.service;
+
 public abstract class CustomTimerTask {
-    private String taskName = ""; ///< Task name
+    private String taskName = "";
     private int times = 1;
 
     /**

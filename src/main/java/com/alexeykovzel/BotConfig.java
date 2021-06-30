@@ -13,7 +13,7 @@ public class BotConfig {
         return SECRET_ARN;
     }
 
-    public static String getDbName() {
+    public static String getDBName() {
         return DB_NAME;
     }
 }

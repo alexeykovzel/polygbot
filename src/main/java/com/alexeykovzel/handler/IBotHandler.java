@@ -1,4 +1,4 @@
-package com.alexeykovzel.controller;
+package com.alexeykovzel.handler;
 
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -6,7 +6,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-public interface IBotController {
+public interface IBotHandler {
 
     /**
      * escape markdown

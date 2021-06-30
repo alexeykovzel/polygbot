@@ -1,33 +1,26 @@
-package com.alexeykovzel.controller;
+package com.alexeykovzel.handler;
 
 import com.alexeykovzel.commandRegistry.CommandRegistry;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
-import org.telegram.telegrambots.meta.ApiContext;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.Serializable;
-
-public abstract class BotController implements IBotController {
-    protected static AbsSender absSender;
+public abstract class BotHandler extends DefaultAbsSender implements IBotHandler {
     protected static CommandRegistry commandRegistry;
 
-    protected static AbsSender absSender(String token) {
-        return new DefaultAbsSender(ApiContext.getInstance(DefaultBotOptions.class)) {
-            @Override
-            public String getBotToken() {
-                return token;
-            }
-        };
+    protected BotHandler(DefaultBotOptions options) {
+        super(options);
+    }
+
+    protected BotHandler() {
+        this(new DefaultBotOptions());
     }
 
     @Override
@@ -35,7 +28,7 @@ public abstract class BotController implements IBotController {
         if (update.hasMessage()) {
             Message message = update.getMessage();
             if (message.isCommand()) {
-                if (!commandRegistry.executeCommand(absSender, message)) {
+                if (!commandRegistry.executeCommand(this, message)) {
                     processInvalidCommandUpdate(update);
                 }
             } else {
@@ -57,7 +50,7 @@ public abstract class BotController implements IBotController {
         sendMessage.disableWebPagePreview();
         sendMessage.setReplyMarkup(inlineKeyboardMarkup);
         try {
-            absSender.execute(sendMessage);
+            execute(sendMessage);
         } catch (TelegramApiException e) {
             e.getStackTrace();
         }
@@ -71,7 +64,7 @@ public abstract class BotController implements IBotController {
         sendMessage.setText(text);
         sendMessage.disableWebPagePreview();
         try {
-            absSender.execute(sendMessage);
+            execute(sendMessage);
         } catch (TelegramApiException e) {
             e.getStackTrace();
         }
@@ -83,7 +76,7 @@ public abstract class BotController implements IBotController {
         deleteMessage.setChatId(chatId);
         deleteMessage.setMessageId(messageId);
         try {
-            absSender.execute(deleteMessage);
+            execute(deleteMessage);
         } catch (TelegramApiException e) {
             e.getStackTrace();
         }
@@ -96,7 +89,7 @@ public abstract class BotController implements IBotController {
         answerCallbackQuery.setShowAlert(alert);
         answerCallbackQuery.setText(text);
         try {
-            absSender.execute(answerCallbackQuery);
+            execute(answerCallbackQuery);
         } catch (TelegramApiException e) {
             e.getStackTrace();
         }

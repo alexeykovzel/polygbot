@@ -1,64 +1,34 @@
 package com.alexeykovzel.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+@EqualsAndHashCode(callSuper = false)
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
 public class Chat {
-    String id;
-    String firstName;
-    String lastName;
-    String username;
-    double memoryStability;
+    private static final String ID_FIELD = "id";
+    private static final String FIRSTNAME_FIELD = "first_name";
+    private static final String LASTNAME_FIELD = "last_name";
+    private static final String USERNAME_FIELD = "username";
+    private static final String MEMORY_STABILITY_FIELD = "memory_stability";
 
-    public Chat(String id) {
-        this.id = id;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public double getMemoryStability() {
-        return memoryStability;
-    }
-
-    public void setMemoryStability(double memoryStability) {
-        this.memoryStability = memoryStability;
-    }
-
-    @Override
-    public String toString() {
-        return "Chat{" +
-                "id='" + id + '\'' +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", username='" + username + '\'' +
-                ", memoryStability=" + memoryStability +
-                '}';
-    }
+    @JsonProperty("ID_FIELD")
+    private String id;
+    @JsonProperty("FIRSTNAME_FIELD")
+    private String firstName;
+    @JsonProperty("LASTNAME_FIELD")
+    private String lastName;
+    @JsonProperty("USERNAME_FIELD")
+    private String username;
+    @JsonProperty("MEMORY_STABILITY_FIELD")
+    private double memoryStability;
 }

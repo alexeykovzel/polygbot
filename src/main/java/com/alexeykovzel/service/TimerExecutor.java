@@ -52,7 +52,7 @@ public class TimerExecutor {
             }
         };
         if (task.getTimes() != 0) {
-            final long delay = computNextDilay(targetHour, targetMin, targetSec);
+            final long delay = computeNextDelay(targetHour, targetMin, targetSec);
             executorService.schedule(taskWrapper, delay, TimeUnit.SECONDS);
         }
     }
@@ -65,9 +65,10 @@ public class TimerExecutor {
      * @param targetSec  Target second
      * @return time in second to wait
      */
-    private static long computNextDilay(int targetHour, int targetMin, int targetSec) {
+    private static long computeNextDelay(int targetHour, int targetMin, int targetSec) {
         final LocalDateTime localNow = LocalDateTime.now(Clock.systemDefaultZone());
         LocalDateTime localNextTarget = localNow.withHour(targetHour).withMinute(targetMin).withSecond(targetSec);
+
         while (localNow.compareTo(localNextTarget.minusSeconds(1)) > 0) {
             localNextTarget = localNextTarget.plusDays(1);
         }
