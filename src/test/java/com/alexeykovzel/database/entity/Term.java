@@ -1,8 +1,9 @@
-package com.alexeykovzel.entity;
+package com.alexeykovzel.database.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
+import javax.persistence.Entity;
 import java.sql.Timestamp;
 
 @EqualsAndHashCode(callSuper = false)

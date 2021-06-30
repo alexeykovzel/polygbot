@@ -1,4 +1,4 @@
-package com.alexeykovzel.entity;
+package com.alexeykovzel.database.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -22,7 +22,7 @@ public class Chat {
     private static final String MEMORY_STABILITY_FIELD = "memory_stability";
 
     @JsonProperty("ID_FIELD")
-    private String id;
+    private int id;
     @JsonProperty("FIRSTNAME_FIELD")
     private String firstName;
     @JsonProperty("LASTNAME_FIELD")
