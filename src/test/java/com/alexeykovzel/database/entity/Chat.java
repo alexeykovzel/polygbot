@@ -1,77 +1,64 @@
 package com.alexeykovzel.database.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.*;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import com.alexeykovzel.database.AuditTrailListener;
 
-@EqualsAndHashCode(callSuper = false)
-@Getter
-@Setter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
+import javax.persistence.*;
+import javax.validation.constraints.Size;
+
+@EntityListeners(AuditTrailListener.class)
 @Entity
+@Table(name = "chat", schema = "polygbot")
 public class Chat {
-    private static final String ID_FIELD = "id";
-    private static final String FIRSTNAME_FIELD = "first_name";
-    private static final String LASTNAME_FIELD = "last_name";
-    private static final String USERNAME_FIELD = "username";
-    private static final String MEMORY_STABILITY_FIELD = "memory_stability";
-
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
-    @JsonProperty("ID_FIELD")
-    private int id;
-    @JsonProperty("FIRSTNAME_FIELD")
+    @Column(name = "id", length = 32)
+    private String id;
+    @Column(name = "first_name", length = 64, nullable = false)
+    @Size(min = 1, max = 64)
     private String firstName;
-    @JsonProperty("LASTNAME_FIELD")
+    @Column(name = "last_name", length = 64)
+    @Size(max = 64)
     private String lastName;
-    @JsonProperty("USERNAME_FIELD")
+    @Column(name = "username", length = 32, nullable = false)
+    @Size(min = 5, max = 32)
     private String username;
-    @JsonProperty("MEMORY_STABILITY_FIELD")
-    private double memoryStability;
+    @Column(name = "memory_stability", precision = 4, scale = 2)
+    private Double memoryStability;
 
-    public int getId() {
-        return id;
+    protected Chat() {
     }
 
-    public void setId(int id) {
+    public Chat(String id, String firstName, String lastName, String username, Double memoryStability) {
         this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.username = username;
+        this.memoryStability = memoryStability;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Chat{id=%s, firstName='%s', lastName='%s', username='%s', memoryStability=%s}'",
+                id, firstName, lastName, username, memoryStability);
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getFirstName() {
         return firstName;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
     public String getLastName() {
         return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public double getMemoryStability() {
+    public Double getMemoryStability() {
         return memoryStability;
-    }
-
-    public void setMemoryStability(double memoryStability) {
-        this.memoryStability = memoryStability;
     }
 }

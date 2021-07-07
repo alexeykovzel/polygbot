@@ -1,8 +1,7 @@
 package com.alexeykovzel;
 
-import com.alexeykovzel.command.HelloCommandTest;
-import com.alexeykovzel.command.HelpCommandTest;
-import com.alexeykovzel.command.StartCommandTest;
+import com.alexeykovzel.ability.HelpAbility;
+import com.alexeykovzel.ability.StartAbility;
 import com.alexeykovzel.commandRegistry.CommandRegistry;
 import com.alexeykovzel.handler.PolygBotHandler;
 import com.alexeykovzel.service.Emoji;
@@ -10,6 +9,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -27,7 +27,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-public class polygBotHandlerTest extends TelegramLongPollingBot {
+//@Component
+public class polygBotHandler extends TelegramLongPollingBot {
     private static final Properties properties = new Properties();
     private static PolygBotHandler polygBotController;
 
@@ -70,12 +71,11 @@ public class polygBotHandlerTest extends TelegramLongPollingBot {
         return polygBotController;
     }
 
-    public polygBotHandlerTest() {
+    public polygBotHandler() {
         commandRegistry = new CommandRegistry(true, botUsername);
-        HelpCommandTest helpCommandTest = new HelpCommandTest(commandRegistry);
+        HelpAbility helpCommandTest = new HelpAbility(commandRegistry);
         commandRegistry.register(helpCommandTest);
-        commandRegistry.register(new HelloCommandTest());
-        commandRegistry.register(new StartCommandTest(helpCommandTest));
+        commandRegistry.register(new StartAbility(helpCommandTest));
 
         commandRegistry.registerDefaultAction((absSender, message) -> {
             SendMessage commandUnknownMessage = new SendMessage();

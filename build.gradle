@@ -1,5 +1,5 @@
 plugins {
-    id 'org.springframework.boot' version '2.4.3' // New version -> 2.5.2
+    id 'org.springframework.boot' version '2.5.2'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
 }
@@ -33,26 +33,23 @@ dependencies {
 
     // DBMS
     implementation 'org.mariadb.jdbc:mariadb-java-client:2.1.2'
-
-    implementation 'software.amazon.rdsdata:rds-data-api-client-library-java:1.0.5'
+//    implementation 'software.amazon.rdsdata:rds-data-api-client-library-java:1.0.5'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.data:spring-data-jdbc:2.2.2'
-//    runtimeOnly 'mysql:mysql-connector-java'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     // Logging
     implementation 'org.apache.logging.log4j:log4j-api:2.13.0'
     implementation 'org.apache.logging.log4j:log4j-core:2.13.0'
-    implementation 'org.projectlombok:lombok:1.18.18'
     runtimeOnly 'org.apache.logging.log4j:log4j-slf4j18-impl:2.13.0'
     runtimeOnly 'com.amazonaws:aws-lambda-java-log4j2:1.2.0'
 
     // Other
+    implementation 'org.telegram:telegrambots-spring-boot-starter:5.2.0'
+    implementation 'org.telegram:telegrambots-abilities:5.2.0'
     implementation 'org.telegram:telegrambots:5.2.0'
     implementation 'org.jsoup:jsoup:1.13.1'
 
     // Testing
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
 }

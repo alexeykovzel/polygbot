@@ -1,4 +1,4 @@
-package com.alexeykovzel.command;
+package com.alexeykovzel.ability;
 
 import com.alexeykovzel.commandRegistry.ICommandRegistry;
 import com.alexeykovzel.commandRegistry.command.BotCommand;
@@ -9,15 +9,10 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-/**
- * This command helps the user to find the command they need
- *
- * @author Timo Schulz (Mit0x2)
- */
-public class HelpCommandTest extends BotCommand {
+public class HelpAbility extends BotCommand {
     private final ICommandRegistry commandRegistry;
 
-    public HelpCommandTest(ICommandRegistry commandRegistry) {
+    public HelpAbility(ICommandRegistry commandRegistry) {
         super("help", "Get all the commands this bot provides");
         this.commandRegistry = commandRegistry;
     }

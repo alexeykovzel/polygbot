@@ -1,7 +1,11 @@
 package com.alexeykovzel.database.repository;
 
 import com.alexeykovzel.database.entity.Chat;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 
-public interface ChatRepository extends CrudRepository<Chat, Integer> {
+import java.util.List;
+
+public interface ChatRepository extends JpaRepository<Chat, Integer> {
+    List<Chat> findByFirstName(String firstName);
 }
