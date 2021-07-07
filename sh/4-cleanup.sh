@@ -14,6 +14,7 @@ if [ -f bucket-name.txt ]; then
     echo "Bucket was not created by this application. Skipping."
   else
     while true; do
+      # shellcheck disable=SC2162
       read -p "Delete deployment artifacts and bucket ($ARTIFACT_BUCKET)? (y/n)" response
       case $response in
       [Yy]*)
@@ -28,6 +29,7 @@ if [ -f bucket-name.txt ]; then
   fi
 fi
 while true; do
+  # shellcheck disable=SC2162
   read -p "Delete function log group (/aws/lambda/$FUNCTION)? (y/n)" response
   case $response in
   [Yy]*)

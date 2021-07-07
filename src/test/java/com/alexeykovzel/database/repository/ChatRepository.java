@@ -7,5 +7,5 @@ import org.springframework.data.repository.CrudRepository;
 import java.util.List;
 
 public interface ChatRepository extends JpaRepository<Chat, Integer> {
-    List<Chat> findByFirstName(String firstName);
+    List<Chat> findByUserFirstName(String firstName);
 }

@@ -1,6 +1,7 @@
 package com.alexeykovzel;
 
 import com.alexeykovzel.database.entity.Chat;
+import com.alexeykovzel.database.entity.User;
 import com.alexeykovzel.database.repository.ChatRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +21,8 @@ public class onPolygBotLaunch {
     @Bean
     public CommandLineRunner demo(ChatRepository repository) {
         return (args) -> {
-            repository.save(new Chat("1", "Ivan", "Ivanov", "ivan123", null));
-            log.info(repository.findByFirstName("Ivan").stream().findFirst().toString());
+            repository.save(new Chat("1", new User("Ivan", "Ivanov", "ivan123", null)));
+            log.info(repository.findByUserFirstName("Ivan").stream().findFirst().toString());
         };
     }
 }
