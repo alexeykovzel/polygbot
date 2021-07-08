@@ -15,12 +15,12 @@ public class User {
     @Size(min = 5, max = 32)
     private String username;
 
-    private String memoryStability;
+    private Double memoryStability;
 
     protected User() {
     }
 
-    public User(String firstName, String lastName, String username, String memoryStability) {
+    public User(String firstName, String lastName, String username, Double memoryStability) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
@@ -51,11 +51,11 @@ public class User {
         this.username = username;
     }
 
-    public String getMemoryStability() {
+    public Double getMemoryStability() {
         return memoryStability;
     }
 
-    public void setMemoryStability(String memoryStability) {
+    public void setMemoryStability(Double memoryStability) {
         this.memoryStability = memoryStability;
     }
 }

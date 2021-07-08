@@ -3,12 +3,19 @@ package com.alexeykovzel;
 import com.alexeykovzel.ability.HelpAbility;
 import com.alexeykovzel.ability.StartAbility;
 import com.alexeykovzel.commandRegistry.CommandRegistry;
+import com.alexeykovzel.database.entity.CaseStudy;
+import com.alexeykovzel.database.entity.Chat;
+import com.alexeykovzel.database.entity.Term;
+import com.alexeykovzel.database.repository.CaseStudyRepository;
+import com.alexeykovzel.database.repository.ChatRepository;
+import com.alexeykovzel.database.repository.TermRepository;
 import com.alexeykovzel.handler.PolygBotHandler;
 import com.alexeykovzel.service.Emoji;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
@@ -22,6 +29,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +43,15 @@ public class polygBotHandler extends TelegramLongPollingBot {
     protected static CommandRegistry commandRegistry;
     private static final String botToken = "1402979569:AAEuPHqAzkc1cTYwGI7DXuVb76ZSptD4zPM";
     private static final String botUsername = "polyg_bot";
+
+//    @Autowired
+    private ChatRepository chatRepository;
+
+//    @Autowired
+    private TermRepository termRepository;
+
+//    @Autowired
+    private CaseStudyRepository caseStudyRepository;
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -102,19 +119,29 @@ public class polygBotHandler extends TelegramLongPollingBot {
         String chatId = String.valueOf(message.getChatId());
         String command = callbackquery.getData();
         String commandQuery = null;
+
         if (command.contains("@")) {
             int separatorIndex = command.indexOf("@");
             commandQuery = command.substring(separatorIndex + 1);
             command = command.substring(0, separatorIndex);
         }
+
         switch (command) {
             case "saveWord":
-                sendMsg(chatId, "I will do my best!" + Emoji.SMILING_FACE_WITH_OPEN_MOUTH_AND_SMILING_EYES);
-                    /*if (!WordHome.isDublicate(chatId, commandQuery)) {
-                        assert commandQuery != null;
-                        WordHome.saveWord(chatId, commandQuery, 0.7);
-                        sendAnswerCallbackQuery("the word '" + commandQuery + "' is successfully added to your list!", false, callbackquery);
-                    }*/
+                if (commandQuery != null) {
+                    Term term = termRepository.findByValue(commandQuery);
+
+                    if (term == null) {
+                        term = new Term(commandQuery);
+                        termRepository.save(term);
+                    }
+
+                    CaseStudy caseStudy = new CaseStudy(
+                            term.getId(), chatId, 0.5, new Timestamp(System.currentTimeMillis()));
+                    caseStudyRepository.save(caseStudy);
+
+                    sendAnswerCallbackQuery("the word '" + commandQuery + "' is successfully added to your list!", false, callbackquery);
+                }
                 break;
             case "notSaveWord":
                 break;
@@ -151,9 +178,9 @@ public class polygBotHandler extends TelegramLongPollingBot {
                 sendMsg(chatId, buildTermInfoMessage(body, origTerm, searchQuery).toString());
 
                 // send message query to add a term to user local vocabulary
-//                    if (!WordHome.isDublicate(chatId, trueTerm)) {
-                sendMsg(chatId, "Would you like to add '*" + origTerm + "*' to your local vocabulary?", buildWordAddReplyMarkup(origTerm));
-//                    }
+//                if (!caseStudyRepository.existsByChatId(chatId, origTerm)) {
+                    sendMsg(chatId, "Would you like to add '*" + origTerm + "*' to your local vocabulary?", buildWordAddReplyMarkup(origTerm));
+//                }
             } catch (NullPointerException e) {
                 sendMsg(chatId, "Ahh, I don't know what is '*" + messageText + "*' " + Emoji.DISAPPOINTED_BUT_RELIEVED_FACE);
             }

@@ -5,10 +5,12 @@ import com.alexeykovzel.database.AuditTrailListener;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
+import java.util.HashSet;
+import java.util.Set;
 
 @EntityListeners(AuditTrailListener.class)
 @Entity
-@Table(name = "chat", schema = "polygbot")
+@Table(name = "chat")
 public class Chat {
 
     @Id
@@ -24,6 +26,9 @@ public class Chat {
     })
     private User user;
 
+    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    Set<CaseStudy> caseStudies = new HashSet<>();
+
     protected Chat() {
     }
 
@@ -36,8 +41,24 @@ public class Chat {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public User getUser() {
         return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Set<CaseStudy> getCaseStudies() {
+        return caseStudies;
+    }
+
+    public void setCaseStudies(Set<CaseStudy> caseStudies) {
+        this.caseStudies = caseStudies;
     }
 
     @Override
