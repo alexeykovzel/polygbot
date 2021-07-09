@@ -4,6 +4,7 @@ import com.alexeykovzel.ability.HelpAbility;
 import com.alexeykovzel.ability.StartAbility;
 import com.alexeykovzel.commandRegistry.CommandRegistry;
 import com.alexeykovzel.database.entity.CaseStudy;
+import com.alexeykovzel.database.entity.CaseStudyId;
 import com.alexeykovzel.database.entity.Chat;
 import com.alexeykovzel.database.entity.Term;
 import com.alexeykovzel.database.repository.CaseStudyRepository;
@@ -44,13 +45,13 @@ public class polygBotHandler extends TelegramLongPollingBot {
     private static final String botToken = "1402979569:AAEuPHqAzkc1cTYwGI7DXuVb76ZSptD4zPM";
     private static final String botUsername = "polyg_bot";
 
-//    @Autowired
+    //    @Autowired
     private ChatRepository chatRepository;
 
-//    @Autowired
+    //    @Autowired
     private TermRepository termRepository;
 
-//    @Autowired
+    //    @Autowired
     private CaseStudyRepository caseStudyRepository;
 
     @Override
@@ -172,15 +173,20 @@ public class polygBotHandler extends TelegramLongPollingBot {
             doc = Jsoup.connect(searchQuery).get();
             try {
                 Element body = doc.body();
-                String origTerm = body.getElementsByClass("orth").first().text();
+                String termValue = body.getElementsByClass("orth").first().text();
 
                 // send term info message
-                sendMsg(chatId, buildTermInfoMessage(body, origTerm, searchQuery).toString());
+                sendMsg(chatId, buildTermInfoMessage(body, termValue, searchQuery).toString());
 
                 // send message query to add a term to user local vocabulary
+
+                Term term = termRepository.findByValue(termValue);
+                if (term != null) {
+//                    CaseStudy caseStudy = caseStudyRepository.findById(new CaseStudyId(term.getId(), chatId));
 //                if (!caseStudyRepository.existsByChatId(chatId, origTerm)) {
-                    sendMsg(chatId, "Would you like to add '*" + origTerm + "*' to your local vocabulary?", buildWordAddReplyMarkup(origTerm));
+                    sendMsg(chatId, "Would you like to add '*" + termValue + "*' to your local vocabulary?", buildWordAddReplyMarkup(termValue));
 //                }
+                }
             } catch (NullPointerException e) {
                 sendMsg(chatId, "Ahh, I don't know what is '*" + messageText + "*' " + Emoji.DISAPPOINTED_BUT_RELIEVED_FACE);
             }

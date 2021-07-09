@@ -34,7 +34,7 @@ public class DatabaseIntegrationTest {
     @Test
     void checkIfCaseStudyExists() {
         String chatId = "597554184";
-        String origTerm = "Hello World!1";
+        String origTerm = "Hello World!";
 
         Chat chat = new Chat(chatId, new User("Aliaksei", null, "alexeykovzel", null));
         chatRepository.save(chat);

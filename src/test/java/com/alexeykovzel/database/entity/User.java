@@ -1,9 +1,19 @@
 package com.alexeykovzel.database.entity;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import javax.persistence.Embeddable;
 import javax.validation.constraints.Size;
 
 @Embeddable
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
 
     @Size(min = 1, max = 64)
@@ -17,45 +27,9 @@ public class User {
 
     private Double memoryStability;
 
-    protected User() {
-    }
-
-    public User(String firstName, String lastName, String username, Double memoryStability) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.username = username;
-        this.memoryStability = memoryStability;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public Double getMemoryStability() {
-        return memoryStability;
-    }
-
-    public void setMemoryStability(Double memoryStability) {
-        this.memoryStability = memoryStability;
+    @Override
+    public String toString() {
+        return String.format("User{firstName='%s', lastName='%s', username='%s', memoryStability=%s}",
+                firstName, lastName, username, memoryStability);
     }
 }

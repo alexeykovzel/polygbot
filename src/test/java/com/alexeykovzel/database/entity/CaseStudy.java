@@ -1,19 +1,28 @@
 package com.alexeykovzel.database.entity;
 
+import lombok.*;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.Objects;
 
 @Entity
 @Table(name = "case_study")
 @IdClass(CaseStudyId.class)
+
+@Getter
+@Setter
+@NoArgsConstructor
 public class CaseStudy {
 
     @Id
     @Column(name = "term_id")
+    @Setter(AccessLevel.PROTECTED)
     private Long termId;
 
     @Id
     @Column(name = "chat_id")
+    @Setter(AccessLevel.PROTECTED)
     private String chatId;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -32,9 +41,6 @@ public class CaseStudy {
     @Column(name = "timestamp")
     private Timestamp timestamp;
 
-    protected CaseStudy() {
-    }
-
     public CaseStudy(Long termId, String chatId, Double retrievability, Timestamp timestamp) {
         this.termId = termId;
         this.chatId = chatId;
@@ -42,51 +48,22 @@ public class CaseStudy {
         this.timestamp = timestamp;
     }
 
-    public Long getTermId() {
-        return termId;
+    @Override
+    public String toString() {
+        return String.format("CaseStudy{termId=%s, chatId=%s, retrievability=%s, timestamp=%s}",
+                termId, chatId, retrievability, timestamp);
     }
 
-    public void setTermId(Long termId) {
-        this.termId = termId;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CaseStudy caseStudy = (CaseStudy) o;
+        return termId.equals(caseStudy.termId) && chatId.equals(caseStudy.chatId);
     }
 
-    public String getChatId() {
-        return chatId;
-    }
-
-    public void setChatId(String chatId) {
-        this.chatId = chatId;
-    }
-
-    public Term getTerm() {
-        return term;
-    }
-
-    public void setTerm(Term term) {
-        this.term = term;
-    }
-
-    public Chat getChat() {
-        return chat;
-    }
-
-    public void setChat(Chat chat) {
-        this.chat = chat;
-    }
-
-    public Double getRetrievability() {
-        return retrievability;
-    }
-
-    public void setRetrievability(Double retrievability) {
-        this.retrievability = retrievability;
-    }
-
-    public Timestamp getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(Timestamp timestamp) {
-        this.timestamp = timestamp;
+    @Override
+    public int hashCode() {
+        return Objects.hash(termId, chatId);
     }
 }

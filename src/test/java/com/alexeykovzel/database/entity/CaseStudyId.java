@@ -1,50 +1,38 @@
 package com.alexeykovzel.database.entity;
 
-import javax.persistence.Column;
+import lombok.*;
+
 import javax.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
+@Data
 @Embeddable
+
+@Getter
+@Setter
+@NoArgsConstructor
 public class CaseStudyId implements Serializable {
 
     private Long termId;
     private String chatId;
-
-    public CaseStudyId() {
-    }
 
     public CaseStudyId(Long termId, String chatId) {
         this.termId = termId;
         this.chatId = chatId;
     }
 
-    public Long getTermId() {
-        return termId;
-    }
-
-    public void setTermId(Long termId) {
-        this.termId = termId;
-    }
-
-    public String getChatId() {
-        return chatId;
-    }
-
-    public void setChatId(String chatId) {
-        this.chatId = chatId;
+    @Override
+    public String toString() {
+        return String.format("CaseStudyId{termId=%s, chatId=%s}", termId, chatId);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-
-        if (o == null || getClass() != o.getClass())
-            return false;
-
+        if (o == null || getClass() != o.getClass()) return false;
         CaseStudyId that = (CaseStudyId) o;
-        return Objects.equals(termId, that.termId) &&
-                Objects.equals(chatId, that.chatId);
+        return termId.equals(that.termId) && chatId.equals(that.chatId);
     }
 
     @Override
