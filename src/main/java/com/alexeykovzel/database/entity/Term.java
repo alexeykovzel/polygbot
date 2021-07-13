@@ -1,13 +1,78 @@
 package com.alexeykovzel.database.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.NaturalId;
 
-import java.sql.Timestamp;
+import javax.persistence.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
+@Entity
+@Table(name = "term")
+
+@Getter
+@Setter
+@NoArgsConstructor
 public class Term {
-    private String id;
-    private String chatId;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter(AccessLevel.PROTECTED)
+    private Long id;
+
+    @NaturalId
+    @Column(name = "value", nullable = false, unique = true)
     private String value;
-    private double retrievability;
-    private Timestamp timestamp;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "term_def",
+            joinColumns = @JoinColumn(name = "term_id")
+    )
+    @Column(name = "value")
+    private Set<String> definitions = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(
+            name = "term_example",
+            joinColumns = @JoinColumn(name = "term_id")
+    )
+    @Column(name = "value")
+    private Set<String> examples = new HashSet<>();
+
+    @OneToMany(mappedBy = "term", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<CaseStudy> caseStudies = new HashSet<>();
+
+    public Term(String value) {
+        this.value = value;
+    }
+
+    public Term(String value, Set<String> definitions, Set<String> examples) {
+        this.value = value;
+        this.definitions = definitions;
+        this.examples = examples;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Term{id=%s, value='%s'}", id, value);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Term term = (Term) o;
+        return value.equals(term.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
+    }
 }

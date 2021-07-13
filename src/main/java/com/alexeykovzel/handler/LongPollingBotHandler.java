@@ -1,13 +1,22 @@
 package com.alexeykovzel.handler;
 
-import com.alexeykovzel.commandRegistry.CommandRegistry;
 import com.alexeykovzel.command.HelloCommand;
+import com.alexeykovzel.command.HelpCommand;
 import com.alexeykovzel.command.StartCommand;
+import com.alexeykovzel.database.entity.CaseStudy;
+import com.alexeykovzel.database.entity.CaseStudyId;
+import com.alexeykovzel.database.entity.Term;
+import com.alexeykovzel.database.repository.CaseStudyRepository;
+import com.alexeykovzel.database.repository.ChatRepository;
+import com.alexeykovzel.database.repository.TermRepository;
 import com.alexeykovzel.service.Emoji;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.extensions.bots.commandbot.commands.CommandRegistry;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -17,54 +26,63 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
-import java.util.*;
+import java.sql.Timestamp;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
-public class PolygBotHandler extends BotHandler {
+@Component
+public class LongPollingBotHandler extends BotHandlerTest {
     private static final Properties properties = new Properties();
-    private static PolygBotHandler polygBotController;
-    private final String botToken;
+    private final ChatRepository chatRepository;
+    private final TermRepository termRepository;
+    private final CaseStudyRepository caseStudyRepository;
+
+    private static final String botToken = "1402979569:AAEuPHqAzkc1cTYwGI7DXuVb76ZSptD4zPM";
+    private static final String botUsername = "polyg_bot";
+
+    @Override
+    public void onUpdateReceived(Update update) {
+        handleUpdate(update);
+    }
+
+    @Override
+    public String getBotUsername() {
+        return botUsername;
+    }
 
     @Override
     public String getBotToken() {
         return botToken;
     }
 
-    public static synchronized PolygBotHandler getInstance(String botUsername, String botToken) {
-        if (polygBotController == null) {
-            polygBotController = new PolygBotHandler(botUsername, botToken);
-        }
-        return polygBotController;
-    }
-
-    public PolygBotHandler(String botUsername, String botToken) {
-        this.botToken = botToken;
-
-        commandRegistry = new CommandRegistry(true, botUsername);
-        HelpCommand helpCommand = new HelpCommand(commandRegistry);
-        commandRegistry.register(helpCommand);
-        commandRegistry.register(new HelloCommand());
-        commandRegistry.register(new StartCommand(helpCommand));
+    public LongPollingBotHandler(ChatRepository chatRepository, TermRepository termRepository, CaseStudyRepository caseStudyRepository) {
+        commandRegistry = new CommandRegistry(true, () -> botUsername);
+        HelpCommand helpCommand = new HelpCommand();
+        commandRegistry.registerAll(helpCommand, new StartCommand(helpCommand, chatRepository), new HelloCommand());
 
         commandRegistry.registerDefaultAction((absSender, message) -> {
-            SendMessage commandUnknownMessage = new SendMessage();
-            commandUnknownMessage.setChatId(String.valueOf(message.getChatId()));
-            commandUnknownMessage.setText("The command '" + message.getText() + "' is not known by this bot. Here comes some help " + Emoji.AMBULANCE);
             try {
-                absSender.execute(commandUnknownMessage);
+                absSender.execute(SendMessage.builder()
+                        .chatId(message.getChatId().toString())
+                        .text("The command '" + message.getText()
+                                + "' is not known by this bot. Here comes some help " + Emoji.AMBULANCE).build());
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
             helpCommand.execute(absSender, message.getFrom(), message.getChat(), new String[]{});
         });
+        this.chatRepository = chatRepository;
+        this.termRepository = termRepository;
+        this.caseStudyRepository = caseStudyRepository;
     }
 
-    @Override
     public void processInvalidCommandUpdate(Update update) {
         String chatId = String.valueOf(update.getMessage().getChatId());
         sendMsg(chatId, "I don't know such command");
     }
 
-    @Override
     public void handleCallBackQuery(Update update) {
         CallbackQuery callbackquery = update.getCallbackQuery();
         Message message = callbackquery.getMessage();
@@ -72,19 +90,30 @@ public class PolygBotHandler extends BotHandler {
         String chatId = String.valueOf(message.getChatId());
         String command = callbackquery.getData();
         String commandQuery = null;
+
         if (command.contains("@")) {
             int separatorIndex = command.indexOf("@");
             commandQuery = command.substring(separatorIndex + 1);
             command = command.substring(0, separatorIndex);
         }
+
         switch (command) {
             case "saveWord":
-                sendMsg(chatId, "I will do my best!" + Emoji.SMILING_FACE_WITH_OPEN_MOUTH_AND_SMILING_EYES);
-                    /*if (!WordHome.isDublicate(chatId, commandQuery)) {
-                        assert commandQuery != null;
-                        WordHome.saveWord(chatId, commandQuery, 0.7);
-                        sendAnswerCallbackQuery("the word '" + commandQuery + "' is successfully added to your list!", false, callbackquery);
-                    }*/
+                if (commandQuery != null) {
+                    Term term = termRepository.findByValue(commandQuery);
+
+                    if (term == null) {
+                        term = new Term(commandQuery);
+                        termRepository.save(term);
+                    }
+
+                    CaseStudy caseStudy = new CaseStudy(
+                            term.getId(), chatId, 0.5, new Timestamp(System.currentTimeMillis()));
+                    caseStudyRepository.save(caseStudy);
+
+                    sendAnswerCallbackQuery("the word '" + commandQuery + "' is successfully added to your list!",
+                            false, callbackquery);
+                }
                 break;
             case "notSaveWord":
                 break;
@@ -92,7 +121,6 @@ public class PolygBotHandler extends BotHandler {
         deleteMsg(chatId, messageId);
     }
 
-    @Override
     public void processNonCommandUpdate(Update update) {
         Message message = update.getMessage();
         if (!message.hasText()) {
@@ -102,13 +130,11 @@ public class PolygBotHandler extends BotHandler {
         }
     }
 
-    @Override
     public void processNonTextMessage(Message message) {
         String chatId = message.getChatId().toString();
         sendMsg(chatId, "Send pls text");
     }
 
-    @Override
     public void processTextMessage(Message message) {
         String chatId = message.getChatId().toString();
         String messageText = message.getText();
@@ -118,15 +144,25 @@ public class PolygBotHandler extends BotHandler {
             doc = Jsoup.connect(searchQuery).get();
             try {
                 Element body = doc.body();
-                String origTerm = body.getElementsByClass("orth").first().text();
+                String termValue = body.getElementsByClass("orth").first().text();
 
                 // send term info message
-                sendMsg(chatId, buildTermInfoMessage(body, origTerm, searchQuery).toString());
+                sendMsg(chatId, buildTermInfoMessage(body, termValue, searchQuery).toString());
 
                 // send message query to add a term to user local vocabulary
-//                    if (!WordHome.isDublicate(chatId, trueTerm)) {
-                sendMsg(chatId, "Would you like to add '*" + origTerm + "*' to your local vocabulary?", buildWordAddReplyMarkup(origTerm));
-//                    }
+
+                Term term = termRepository.findByValue(termValue);
+                boolean queryRequired;
+
+                if (term != null) {
+                    queryRequired = !caseStudyRepository.findById(new CaseStudyId(term.getId(), chatId)).isPresent();
+                } else {
+                    termRepository.save(new Term(termValue));
+                    queryRequired = true;
+                }
+                if (queryRequired) {
+                    sendMsg(chatId, "Would you like to learn '*" + termValue + "*'?", buildWordAddReplyMarkup(termValue));
+                }
             } catch (NullPointerException e) {
                 sendMsg(chatId, "Ahh, I don't know what is '*" + messageText + "*' " + Emoji.DISAPPOINTED_BUT_RELIEVED_FACE);
             }

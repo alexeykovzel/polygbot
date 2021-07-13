@@ -1,15 +1,12 @@
 package com.alexeykovzel.command;
 
+import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-/**
- * This command simply replies with a hello to the users command and
- * sends them the 'kind' words back, which they send via command parameters
- */
 public class HelloCommand extends BotCommand {
 
     public HelloCommand() {
@@ -18,13 +15,10 @@ public class HelloCommand extends BotCommand {
 
     @Override
     public void execute(AbsSender absSender, User user, Chat chat, String[] arguments) {
-        String chatId = chat.getId().toString();
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        sendMessage.setText("This command does not do anything yet");
-
         try {
-            absSender.execute(sendMessage);
+            absSender.execute(SendMessage.builder()
+                    .chatId(chat.getId().toString())
+                    .text("This command does not do anything yet").build());
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

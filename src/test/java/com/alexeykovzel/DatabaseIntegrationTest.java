@@ -16,7 +16,7 @@ import javax.persistence.PersistenceContext;
 import java.util.*;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = OnPolygBotLaunchTest.class)
+@SpringBootTest(classes = SpringBootApplication.class)
 @TestPropertySource(
         locations = "classpath:application-integration-test.properties")
 public class DatabaseIntegrationTest {

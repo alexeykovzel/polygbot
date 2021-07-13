@@ -1,10 +1,14 @@
 package com.alexeykovzel.command;
 
-import org.telegram.telegrambots.meta.api.objects.Chat;
-import org.telegram.telegrambots.meta.api.objects.User;
+import com.alexeykovzel.database.entity.Chat;
+import com.alexeykovzel.database.entity.User;
+import com.alexeykovzel.database.repository.ChatRepository;
+import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.bots.AbsSender;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,38 +19,38 @@ import java.util.List;
  * @author alexeykovzel
  */
 public class StartCommand extends BotCommand {
+    private static final String COMMAND_IDENTIFIER = "start";
+    private static final String COMMAND_DESCRIPTION = "this command starts the bot";
+    private final ChatRepository chatRepository;
     HelpCommand helpCommand;
 
-    public StartCommand(HelpCommand helpCommand) {
-        super("start", "this command starts the bot");
+
+    public StartCommand(HelpCommand helpCommand, ChatRepository chatRepository) {
+        super(COMMAND_IDENTIFIER, COMMAND_DESCRIPTION);
         this.helpCommand = helpCommand;
+        this.chatRepository = chatRepository;
     }
 
     @Override
-    public void execute(AbsSender absSender, User user, Chat chat, String[] arguments) {
-        int chatId = Math.toIntExact(chat.getId());
+    public void execute(AbsSender absSender,
+                        org.telegram.telegrambots.meta.api.objects.User user,
+                        org.telegram.telegrambots.meta.api.objects.Chat chat,
+                        String[] arguments) {
+        String chatId = chat.getId().toString();
 
-        /*try {
-            if (!ChatHome.checkChatExistence(chatId)) {
-                ChatHome.saveChat(chatId, chat.getFirstName(), chat.getLastName(), chat.getUserName());
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }*/
-
-        helpCommand.execute(absSender, user, chat, new String[]{});
-
-        /*SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText(properties.getProperty("startText"));
-        message.setReplyMarkup(getInlineKeyboardMarkup());
-        message.setSticker(new InputFile(new File("/home/aliakseik/Projects/polygbot/src/main/resources/pictures/anime-girl-demon.webp")));
+        if (!chatRepository.existsById(chatId)) {
+            chatRepository.save(new Chat(chatId, new User(user.getFirstName(), user.getLastName(), user.getUserName(), null)));
+        }
 
         try {
-            absSender.execute(message);
+            absSender.execute(SendMessage.builder()
+                    .chatId(chatId)
+                    .text("WELCOME").build());
         } catch (TelegramApiException e) {
             e.printStackTrace();
-        }*/
+        }
+
+        helpCommand.execute(absSender, user, chat, new String[]{});
     }
 
     private InlineKeyboardMarkup getInlineKeyboardMarkup() {

@@ -1,106 +1,105 @@
 package com.alexeykovzel.handler;
 
-import com.alexeykovzel.commandRegistry.CommandRegistry;
-import org.telegram.telegrambots.bots.DefaultAbsSender;
-import org.telegram.telegrambots.bots.DefaultBotOptions;
-import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-public abstract class BotHandler extends DefaultAbsSender implements IBotHandler {
-    protected static CommandRegistry commandRegistry;
+public interface BotHandler {
 
-    protected BotHandler(DefaultBotOptions options) {
-        super(options);
-    }
+    /**
+     * escape markdown
+     *
+     * @param text text
+     * @return text without markdown
+     */
+    String escapeMarkdown(String text);
 
-    protected BotHandler() {
-        this(new DefaultBotOptions());
-    }
+    /**
+     * handle update
+     *
+     * @param update update
+     * @throws TelegramApiException TelegramApiException
+     */
+    void handleUpdate(Update update) throws TelegramApiException;
 
-    @Override
-    public void handleUpdate(Update update) {
-        if (update.hasMessage()) {
-            Message message = update.getMessage();
-            if (message.isCommand()) {
-                if (commandRegistry.executeCommand(this, message)) {
-                    processInvalidCommandUpdate(update);
-                }
-            } else {
-                processNonCommandUpdate(update);
-            }
-        } else {
-            if (update.hasCallbackQuery()) {
-                handleCallBackQuery(update);
-            }
-        }
-    }
+    /**
+     * process invalid command update
+     *
+     * @param update update
+     */
+    void processInvalidCommandUpdate(Update update);
 
-    @Override
-    public synchronized void sendMsg(String chatId, String text, InlineKeyboardMarkup inlineKeyboardMarkup) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.enableMarkdown(true);
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(text);
-        sendMessage.disableWebPagePreview();
-        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
-        try {
-            execute(sendMessage);
-        } catch (TelegramApiException e) {
-            e.getStackTrace();
-        }
-    }
+    /**
+     * process message with text
+     *
+     * @param message message
+     */
+    void processTextMessage(Message message);
 
-    @Override
-    public synchronized void sendMsg(String chatId, String text) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.enableMarkdown(true);
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(text);
-        sendMessage.disableWebPagePreview();
-        try {
-            execute(sendMessage);
-        } catch (TelegramApiException e) {
-            e.getStackTrace();
-        }
-    }
+    /**
+     * process message without text
+     *
+     * @param message message
+     */
+    void processNonTextMessage(Message message);
 
-    @Override
-    public void deleteMsg(String chatId, Integer messageId) {
-        DeleteMessage deleteMessage = new DeleteMessage();
-        deleteMessage.setChatId(chatId);
-        deleteMessage.setMessageId(messageId);
-        try {
-            execute(deleteMessage);
-        } catch (TelegramApiException e) {
-            e.getStackTrace();
-        }
-    }
+    /**
+     * handle callback query
+     *
+     * @param update update
+     */
+    void handleCallBackQuery(Update update);
 
-    @Override
-    public void sendAnswerCallbackQuery(String text, boolean alert, CallbackQuery callbackquery) {
-        AnswerCallbackQuery answerCallbackQuery = new AnswerCallbackQuery();
-        answerCallbackQuery.setCallbackQueryId(callbackquery.getId());
-        answerCallbackQuery.setShowAlert(alert);
-        answerCallbackQuery.setText(text);
-        try {
-            execute(answerCallbackQuery);
-        } catch (TelegramApiException e) {
-            e.getStackTrace();
-        }
-    }
+    /**
+     * process non-command update
+     *
+     * @param update update
+     */
+    void processNonCommandUpdate(Update update);
 
-    @Override
-    public String escapeMarkdown(String text) {
-        return text
-                .replace("_", "\\_")
-                .replace("*", "\\*")
-                .replace("[", "\\[")
-                .replace("`", "\\`");
-    }
+    /**
+     * send message with inlineKeyboardMarkup
+     *
+     * @param chatId               chat id
+     * @param text                 the String that you want to send as a message.
+     * @param inlineKeyboardMarkup attached inline keyboard markup to a message
+     */
+    void sendMsg(String chatId, String text, InlineKeyboardMarkup inlineKeyboardMarkup);
+
+    /**
+     * send message
+     *
+     * @param chatId chat id
+     * @param text   the String that you want to send as a message.
+     */
+    void sendMsg(String chatId, String text);
+
+    /**
+     * delete message
+     *
+     * @param chatId    chatId
+     * @param messageId messageId
+     */
+    void deleteMsg(String chatId, Integer messageId);
+
+    /**
+     * send AnswerCallbackQuery
+     *
+     * @param text          text
+     * @param alert         alert
+     * @param callbackquery callbackquery
+     */
+    void sendAnswerCallbackQuery(String text, boolean alert, CallbackQuery callbackquery);
+
+    /**
+     * Return username of this bot
+     */
+    String getBotUsername();
+
+    /**
+     * Return bot token to access Telegram API
+     */
+    String getBotToken();
 }
