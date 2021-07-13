@@ -1,17 +1,18 @@
-package com.alexeykovzel.database.entity;
+package com.alexeykovzel.db.entities;
 
-import com.alexeykovzel.database.AuditTrailListener;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-@EntityListeners(AuditTrailListener.class)
+@EntityListeners(Chat.AuditTrailListener.class)
 @Entity
 @Table(name = "chat")
 
@@ -59,5 +60,28 @@ public class Chat {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    static final class AuditTrailListener {
+        private static final Log log = LogFactory.getLog(AuditTrailListener.class);
+
+        @PrePersist
+        @PreUpdate
+        @PreRemove
+        private void beforeAnyUpdate(Chat chat) {
+            log.info("[USER AUDIT] About to add/update/delete chat: id=" + chat.getId());
+        }
+
+        @PostPersist
+        @PostUpdate
+        @PostRemove
+        private void afterAnyUpdate(Chat chat) {
+            log.info("[USER AUDIT] add/update/delete complete for chat: id=" + chat.getId());
+        }
+
+        @PostLoad
+        private void afterLoad(Chat chat) {
+            log.info("[USER AUDIT] chat loaded from database: id=" + chat.getId());
+        }
     }
 }

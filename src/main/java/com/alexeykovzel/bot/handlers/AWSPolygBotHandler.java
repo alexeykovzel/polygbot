@@ -1,21 +1,12 @@
-package com.alexeykovzel.handler;
+package com.alexeykovzel.bot.handlers;
 
-import com.alexeykovzel.command.HelloCommand;
-import com.alexeykovzel.command.HelpCommand;
-import com.alexeykovzel.command.StartCommand;
-import com.alexeykovzel.database.entity.CaseStudy;
-import com.alexeykovzel.database.entity.CaseStudyId;
-import com.alexeykovzel.database.entity.Term;
-import com.alexeykovzel.database.repository.CaseStudyRepository;
-import com.alexeykovzel.database.repository.ChatRepository;
-import com.alexeykovzel.database.repository.TermRepository;
-import com.alexeykovzel.service.Emoji;
+import com.alexeykovzel.bot.commands.HelpCommand;
+import com.alexeykovzel.bot.Emoji;
+import lombok.Getter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.CommandRegistry;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
@@ -26,63 +17,58 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-@Component
-public class LongPollingBotHandler extends BotHandlerTest {
+public class AWSPolygBotHandler extends TelegramBotHandler {
     private static final Properties properties = new Properties();
-    private final ChatRepository chatRepository;
-    private final TermRepository termRepository;
-    private final CaseStudyRepository caseStudyRepository;
-
-    private static final String botToken = "1402979569:AAEuPHqAzkc1cTYwGI7DXuVb76ZSptD4zPM";
-    private static final String botUsername = "polyg_bot";
-
-    @Override
-    public void onUpdateReceived(Update update) {
-        handleUpdate(update);
-    }
-
-    @Override
-    public String getBotUsername() {
-        return botUsername;
-    }
+    private static AWSPolygBotHandler polygBotController;
+    private final String botToken;
+    @Getter
+    private final String botUsername;
 
     @Override
     public String getBotToken() {
         return botToken;
     }
 
-    public LongPollingBotHandler(ChatRepository chatRepository, TermRepository termRepository, CaseStudyRepository caseStudyRepository) {
+    public static synchronized AWSPolygBotHandler getInstance(String botUsername, String botToken) {
+        if (polygBotController == null) {
+            polygBotController = new AWSPolygBotHandler(botUsername, botToken);
+        }
+        return polygBotController;
+    }
+
+    public AWSPolygBotHandler(String botUsername, String botToken) {
+        this.botToken = botToken;
+        this.botUsername = botUsername;
+
         commandRegistry = new CommandRegistry(true, () -> botUsername);
         HelpCommand helpCommand = new HelpCommand();
-        commandRegistry.registerAll(helpCommand, new StartCommand(helpCommand, chatRepository), new HelloCommand());
+//        commandRegistry.registerAll(helpCommand, new StartCommand(helpCommand), new HelloCommand());
 
         commandRegistry.registerDefaultAction((absSender, message) -> {
+            SendMessage commandUnknownMessage = new SendMessage();
+            commandUnknownMessage.setChatId(String.valueOf(message.getChatId()));
+            commandUnknownMessage.setText("The command '" + message.getText() + "' is not known by this bot. Here comes some help " + Emoji.AMBULANCE);
             try {
-                absSender.execute(SendMessage.builder()
-                        .chatId(message.getChatId().toString())
-                        .text("The command '" + message.getText()
-                                + "' is not known by this bot. Here comes some help " + Emoji.AMBULANCE).build());
+                absSender.execute(commandUnknownMessage);
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
             helpCommand.execute(absSender, message.getFrom(), message.getChat(), new String[]{});
         });
-        this.chatRepository = chatRepository;
-        this.termRepository = termRepository;
-        this.caseStudyRepository = caseStudyRepository;
     }
 
+    @Override
     public void processInvalidCommandUpdate(Update update) {
         String chatId = String.valueOf(update.getMessage().getChatId());
         sendMsg(chatId, "I don't know such command");
     }
 
+    @Override
     public void handleCallBackQuery(Update update) {
         CallbackQuery callbackquery = update.getCallbackQuery();
         Message message = callbackquery.getMessage();
@@ -90,30 +76,19 @@ public class LongPollingBotHandler extends BotHandlerTest {
         String chatId = String.valueOf(message.getChatId());
         String command = callbackquery.getData();
         String commandQuery = null;
-
         if (command.contains("@")) {
             int separatorIndex = command.indexOf("@");
             commandQuery = command.substring(separatorIndex + 1);
             command = command.substring(0, separatorIndex);
         }
-
         switch (command) {
             case "saveWord":
-                if (commandQuery != null) {
-                    Term term = termRepository.findByValue(commandQuery);
-
-                    if (term == null) {
-                        term = new Term(commandQuery);
-                        termRepository.save(term);
-                    }
-
-                    CaseStudy caseStudy = new CaseStudy(
-                            term.getId(), chatId, 0.5, new Timestamp(System.currentTimeMillis()));
-                    caseStudyRepository.save(caseStudy);
-
-                    sendAnswerCallbackQuery("the word '" + commandQuery + "' is successfully added to your list!",
-                            false, callbackquery);
-                }
+                sendMsg(chatId, "I will do my best!" + Emoji.SMILING_FACE_WITH_OPEN_MOUTH_AND_SMILING_EYES);
+                    /*if (!WordHome.isDublicate(chatId, commandQuery)) {
+                        assert commandQuery != null;
+                        WordHome.saveWord(chatId, commandQuery, 0.7);
+                        sendAnswerCallbackQuery("the word '" + commandQuery + "' is successfully added to your list!", false, callbackquery);
+                    }*/
                 break;
             case "notSaveWord":
                 break;
@@ -121,6 +96,7 @@ public class LongPollingBotHandler extends BotHandlerTest {
         deleteMsg(chatId, messageId);
     }
 
+    @Override
     public void processNonCommandUpdate(Update update) {
         Message message = update.getMessage();
         if (!message.hasText()) {
@@ -130,11 +106,13 @@ public class LongPollingBotHandler extends BotHandlerTest {
         }
     }
 
+    @Override
     public void processNonTextMessage(Message message) {
         String chatId = message.getChatId().toString();
         sendMsg(chatId, "Send pls text");
     }
 
+    @Override
     public void processTextMessage(Message message) {
         String chatId = message.getChatId().toString();
         String messageText = message.getText();
@@ -144,25 +122,15 @@ public class LongPollingBotHandler extends BotHandlerTest {
             doc = Jsoup.connect(searchQuery).get();
             try {
                 Element body = doc.body();
-                String termValue = body.getElementsByClass("orth").first().text();
+                String origTerm = body.getElementsByClass("orth").first().text();
 
                 // send term info message
-                sendMsg(chatId, buildTermInfoMessage(body, termValue, searchQuery).toString());
+                sendMsg(chatId, buildTermInfoMessage(body, origTerm, searchQuery).toString());
 
                 // send message query to add a term to user local vocabulary
-
-                Term term = termRepository.findByValue(termValue);
-                boolean queryRequired;
-
-                if (term != null) {
-                    queryRequired = !caseStudyRepository.findById(new CaseStudyId(term.getId(), chatId)).isPresent();
-                } else {
-                    termRepository.save(new Term(termValue));
-                    queryRequired = true;
-                }
-                if (queryRequired) {
-                    sendMsg(chatId, "Would you like to learn '*" + termValue + "*'?", buildWordAddReplyMarkup(termValue));
-                }
+//                    if (!WordHome.isDublicate(chatId, trueTerm)) {
+                sendMsg(chatId, "Would you like to add '*" + origTerm + "*' to your local vocabulary?", buildWordAddReplyMarkup(origTerm));
+//                    }
             } catch (NullPointerException e) {
                 sendMsg(chatId, "Ahh, I don't know what is '*" + messageText + "*' " + Emoji.DISAPPOINTED_BUT_RELIEVED_FACE);
             }
@@ -185,7 +153,7 @@ public class LongPollingBotHandler extends BotHandlerTest {
         return inlineKeyboardMarkup;
     }
 
-    private InlineKeyboardButton createInlineKeyboardButton(String text, String callbackData) {
+    public InlineKeyboardButton createInlineKeyboardButton(String text, String callbackData) {
         InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
         inlineKeyboardButton.setText(text);
         inlineKeyboardButton.setCallbackData(callbackData);

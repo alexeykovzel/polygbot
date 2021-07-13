@@ -1,4 +1,4 @@
-package com.alexeykovzel.service;
+package com.alexeykovzel.utils;
 
 import java.time.Clock;
 import java.time.Duration;

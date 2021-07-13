@@ -1,9 +1,9 @@
 package com.alexeykovzel;
 
-import com.alexeykovzel.database.entity.*;
-import com.alexeykovzel.database.repository.CaseStudyRepository;
-import com.alexeykovzel.database.repository.ChatRepository;
-import com.alexeykovzel.database.repository.TermRepository;
+import com.alexeykovzel.db.entities.*;
+import com.alexeykovzel.db.repositories.CaseStudyRepository;
+import com.alexeykovzel.db.repositories.ChatRepository;
+import com.alexeykovzel.db.repositories.TermRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,7 @@ import javax.persistence.PersistenceContext;
 import java.util.*;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = SpringBootApplication.class)
+@SpringBootTest(classes = Main.class)
 @TestPropertySource(
         locations = "classpath:application-integration-test.properties")
 public class DatabaseIntegrationTest {

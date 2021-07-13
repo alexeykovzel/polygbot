@@ -1,4 +1,4 @@
-package com.alexeykovzel.service;
+package com.alexeykovzel.bot;
 
 public enum Emoji {
     GRINNING_FACE_WITH_SMILING_EYES('\uD83D', '\uDE01'),

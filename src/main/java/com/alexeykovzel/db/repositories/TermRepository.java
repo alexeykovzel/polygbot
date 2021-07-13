@@ -1,9 +1,11 @@
-package com.alexeykovzel.database.repository;
+package com.alexeykovzel.db.repositories;
 
-import com.alexeykovzel.database.entity.Term;
+import com.alexeykovzel.db.entities.Term;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface TermRepository extends JpaRepository<Term, Long> {
     Term findByValue(String value);
 

@@ -1,4 +1,4 @@
-package com.alexeykovzel.service;
+package com.alexeykovzel.utils;
 
 public abstract class CustomTimerTask {
     private String taskName = "";

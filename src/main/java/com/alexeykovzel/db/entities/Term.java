@@ -1,9 +1,7 @@
-package com.alexeykovzel.database.entity;
+package com.alexeykovzel.db.entities;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import kotlin.Pair;
+import lombok.*;
 import org.hibernate.annotations.NaturalId;
 
 import javax.persistence.*;
@@ -18,6 +16,8 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Term {
 
     @Id
@@ -48,10 +48,6 @@ public class Term {
     @OneToMany(mappedBy = "term", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<CaseStudy> caseStudies = new HashSet<>();
 
-    public Term(String value) {
-        this.value = value;
-    }
-
     public Term(String value, Set<String> definitions, Set<String> examples) {
         this.value = value;
         this.definitions = definitions;
@@ -75,4 +71,15 @@ public class Term {
     public int hashCode() {
         return Objects.hash(value);
     }
+
+    @Getter
+    @Setter
+    @Builder
+    public static class Details {
+        private String value;
+        private String link;
+        private List<Pair<String, String>> definitions;
+        private List<String> examples;
+    }
 }
+

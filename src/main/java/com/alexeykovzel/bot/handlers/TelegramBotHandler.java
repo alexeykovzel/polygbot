@@ -1,7 +1,7 @@
-package com.alexeykovzel.handler;
+package com.alexeykovzel.bot.handlers;
 
+import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.CommandRegistry;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
@@ -13,20 +13,20 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-abstract class BotHandlerTest extends TelegramLongPollingBot implements BotHandler {
-    protected CommandRegistry commandRegistry;
+public abstract class TelegramBotHandler extends DefaultAbsSender implements BotHandler {
+    protected static CommandRegistry commandRegistry;
 
-    public BotHandlerTest() {
+    protected TelegramBotHandler() {
         this(new DefaultBotOptions());
     }
 
-    public BotHandlerTest(DefaultBotOptions options) {
+    protected TelegramBotHandler(DefaultBotOptions options) {
         this(options, true);
     }
 
-    public BotHandlerTest(DefaultBotOptions options, boolean allowCommandsWithUsername) {
+    protected TelegramBotHandler(DefaultBotOptions options, boolean allowCommandsWithUsername) {
         super(options);
-        this.commandRegistry = new CommandRegistry(allowCommandsWithUsername, this::getBotUsername);
+        commandRegistry = new CommandRegistry(allowCommandsWithUsername, this::getBotUsername);
     }
 
     @Override
@@ -46,7 +46,6 @@ abstract class BotHandlerTest extends TelegramLongPollingBot implements BotHandl
             }
         }
     }
-
     protected boolean filter(Message message) {
         return false;
     }

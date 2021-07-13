@@ -1,4 +1,4 @@
-package com.alexeykovzel;
+package com.alexeykovzel.bot;
 
 public class BotConfig {
     private static final String RESOURCE_ARN = "arn:aws:rds:us-east-2:574318152798:cluster:polygbot-cluster";

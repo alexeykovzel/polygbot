@@ -1,7 +1,7 @@
-package com.alexeykovzel.handler;
+package com.alexeykovzel.bot.handlers;
 
-import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
+import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.CommandRegistry;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
@@ -11,24 +11,24 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-public abstract class TelegramBotHandler extends DefaultAbsSender implements BotHandler {
-    protected static CommandRegistry commandRegistry;
+abstract class LongPollingBotHandler extends TelegramLongPollingBot implements BotHandler {
+    protected CommandRegistry commandRegistry;
 
-    protected TelegramBotHandler() {
+    public LongPollingBotHandler() {
         this(new DefaultBotOptions());
     }
 
-    protected TelegramBotHandler(DefaultBotOptions options) {
+    public LongPollingBotHandler(DefaultBotOptions options) {
         this(options, true);
     }
 
-    protected TelegramBotHandler(DefaultBotOptions options, boolean allowCommandsWithUsername) {
+    public LongPollingBotHandler(DefaultBotOptions options, boolean allowCommandsWithUsername) {
         super(options);
-        commandRegistry = new CommandRegistry(allowCommandsWithUsername, this::getBotUsername);
+        this.commandRegistry = new CommandRegistry(allowCommandsWithUsername, this::getBotUsername);
     }
-
 
     @Override
     public void handleUpdate(Update update) {
@@ -47,6 +47,7 @@ public abstract class TelegramBotHandler extends DefaultAbsSender implements Bot
             }
         }
     }
+
     protected boolean filter(Message message) {
         return false;
     }
@@ -112,5 +113,13 @@ public abstract class TelegramBotHandler extends DefaultAbsSender implements Bot
                 .replace("*", "\\*")
                 .replace("[", "\\[")
                 .replace("`", "\\`");
+    }
+
+    @Override
+    public InlineKeyboardButton createInlineKeyboardButton(String text, String callbackData) {
+        InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
+        inlineKeyboardButton.setText(text);
+        inlineKeyboardButton.setCallbackData(callbackData);
+        return inlineKeyboardButton;
     }
 }

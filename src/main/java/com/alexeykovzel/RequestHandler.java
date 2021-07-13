@@ -1,7 +1,7 @@
 package com.alexeykovzel;
 
-import com.alexeykovzel.handler.TelegramBotHandler;
-import com.alexeykovzel.handler.AWSBotHandler;
+import com.alexeykovzel.bot.handlers.TelegramBotHandler;
+import com.alexeykovzel.bot.handlers.AWSPolygBotHandler;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -59,7 +59,7 @@ public class RequestHandler implements RequestStreamHandler {
         try {
             Update update = MAPPER.readValue(body, Update.class);
             if (update != null) {
-                TelegramBotHandler telegramBotHandler = AWSBotHandler.getInstance(getenv("bot_username"), getenv("bot_token"));
+                TelegramBotHandler telegramBotHandler = AWSPolygBotHandler.getInstance(getenv("bot_username"), getenv("bot_token"));
                 telegramBotHandler.handleUpdate(update);
             }
         } catch (IOException e) {

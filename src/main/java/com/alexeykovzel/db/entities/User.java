@@ -1,4 +1,4 @@
-package com.alexeykovzel.database.entity;
+package com.alexeykovzel.db.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

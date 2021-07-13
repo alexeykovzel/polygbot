@@ -1,6 +1,6 @@
-package com.alexeykovzel.database.repository;
+package com.alexeykovzel.db.repositories;
 
-import com.alexeykovzel.database.entity.Chat;
+import com.alexeykovzel.db.entities.Chat;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

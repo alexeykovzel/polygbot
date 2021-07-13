@@ -1,8 +1,8 @@
-package com.alexeykovzel.command;
+package com.alexeykovzel.bot.commands;
 
-import com.alexeykovzel.database.entity.Chat;
-import com.alexeykovzel.database.entity.User;
-import com.alexeykovzel.database.repository.ChatRepository;
+import com.alexeykovzel.db.entities.Chat;
+import com.alexeykovzel.db.entities.User;
+import com.alexeykovzel.db.repositories.ChatRepository;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
