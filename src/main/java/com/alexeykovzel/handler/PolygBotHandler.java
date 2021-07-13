@@ -1,9 +1,8 @@
 package com.alexeykovzel.handler;
 
 import com.alexeykovzel.commandRegistry.CommandRegistry;
-import com.alexeykovzel.commandRegistry.command.HelloCommand;
-import com.alexeykovzel.commandRegistry.command.HelpCommand;
-import com.alexeykovzel.commandRegistry.command.StartCommand;
+import com.alexeykovzel.command.HelloCommand;
+import com.alexeykovzel.command.StartCommand;
 import com.alexeykovzel.service.Emoji;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

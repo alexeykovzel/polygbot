@@ -1,16 +1,14 @@
-package com.alexeykovzel;
+package com.alexeykovzel.handler;
 
-import com.alexeykovzel.ability.HelpAbility;
-import com.alexeykovzel.ability.StartAbility;
-import com.alexeykovzel.commandRegistry.CommandRegistry;
+import com.alexeykovzel.command.HelloCommand;
+import com.alexeykovzel.command.HelpCommand;
+import com.alexeykovzel.command.StartCommand;
 import com.alexeykovzel.database.entity.CaseStudy;
 import com.alexeykovzel.database.entity.CaseStudyId;
-import com.alexeykovzel.database.entity.Chat;
 import com.alexeykovzel.database.entity.Term;
 import com.alexeykovzel.database.repository.CaseStudyRepository;
 import com.alexeykovzel.database.repository.ChatRepository;
 import com.alexeykovzel.database.repository.TermRepository;
-import com.alexeykovzel.handler.PolygBotHandler;
 import com.alexeykovzel.service.Emoji;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -18,10 +16,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
+import org.telegram.telegrambots.extensions.bots.commandbot.commands.CommandRegistry;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -36,40 +32,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-//@Component
-public class polygBotHandler extends TelegramLongPollingBot {
+@Component
+public class PolygBotHandlerTest extends BotHandlerTest {
     private static final Properties properties = new Properties();
     private static PolygBotHandler polygBotController;
 
-    protected static CommandRegistry commandRegistry;
     private static final String botToken = "1402979569:AAEuPHqAzkc1cTYwGI7DXuVb76ZSptD4zPM";
     private static final String botUsername = "polyg_bot";
 
-    //    @Autowired
-    private ChatRepository chatRepository;
-
-    //    @Autowired
-    private TermRepository termRepository;
-
-    //    @Autowired
-    private CaseStudyRepository caseStudyRepository;
-
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage()) {
-            Message message = update.getMessage();
-            if (message.isCommand()) {
-                if (!commandRegistry.executeCommand(this, message)) {
-                    processInvalidCommandUpdate(update);
-                }
-            } else {
-                processNonCommandUpdate(update);
-            }
-        } else {
-            if (update.hasCallbackQuery()) {
-                handleCallBackQuery(update);
-            }
-        }
+        handleUpdate(update);
     }
 
     @Override
@@ -82,29 +55,29 @@ public class polygBotHandler extends TelegramLongPollingBot {
         return botToken;
     }
 
-    public static synchronized PolygBotHandler getInstance(String botUsername, String botToken) {
-        if (polygBotController == null) {
-            polygBotController = new PolygBotHandler(botUsername, botToken);
-        }
-        return polygBotController;
-    }
+    @Autowired
+    private ChatRepository chatRepository;
 
-    public polygBotHandler() {
-        commandRegistry = new CommandRegistry(true, botUsername);
-        HelpAbility helpCommandTest = new HelpAbility(commandRegistry);
-        commandRegistry.register(helpCommandTest);
-        commandRegistry.register(new StartAbility(helpCommandTest));
+    @Autowired
+    private TermRepository termRepository;
+
+    @Autowired
+    private CaseStudyRepository caseStudyRepository;
+
+    public PolygBotHandlerTest() {
+        commandRegistry = new CommandRegistry(true, () -> botUsername);
+        HelpCommand helpCommand = new HelpCommand();
+        commandRegistry.registerAll(helpCommand, new StartCommand(helpCommand), new HelloCommand());
 
         commandRegistry.registerDefaultAction((absSender, message) -> {
-            SendMessage commandUnknownMessage = new SendMessage();
-            commandUnknownMessage.setChatId(String.valueOf(message.getChatId()));
-            commandUnknownMessage.setText("The command '" + message.getText() + "' is not known by this bot. Here comes some help " + Emoji.AMBULANCE);
             try {
-                absSender.execute(commandUnknownMessage);
+                absSender.execute(SendMessage.builder()
+                        .chatId(message.getChatId().toString())
+                        .text("The command '" + message.getText() + "' is not known by this bot. Here comes some help " + Emoji.AMBULANCE).build());
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
-            helpCommandTest.execute(absSender, message.getFrom(), message.getChat(), new String[]{});
+            helpCommand.execute(absSender, message.getFrom(), message.getChat(), new String[]{});
         });
     }
 
@@ -181,11 +154,16 @@ public class polygBotHandler extends TelegramLongPollingBot {
                 // send message query to add a term to user local vocabulary
 
                 Term term = termRepository.findByValue(termValue);
+                boolean queryRequired;
+
                 if (term != null) {
-//                    CaseStudy caseStudy = caseStudyRepository.findById(new CaseStudyId(term.getId(), chatId));
-//                if (!caseStudyRepository.existsByChatId(chatId, origTerm)) {
-                    sendMsg(chatId, "Would you like to add '*" + termValue + "*' to your local vocabulary?", buildWordAddReplyMarkup(termValue));
-//                }
+                    queryRequired = !caseStudyRepository.findById(new CaseStudyId(term.getId(), chatId)).isPresent();
+                } else {
+                    termRepository.save(new Term(termValue));
+                    queryRequired = true;
+                }
+                if (queryRequired) {
+                    sendMsg(chatId, "Would you like to learn '*" + termValue + "*'?", buildWordAddReplyMarkup(termValue));
                 }
             } catch (NullPointerException e) {
                 sendMsg(chatId, "Ahh, I don't know what is '*" + messageText + "*' " + Emoji.DISAPPOINTED_BUT_RELIEVED_FACE);
@@ -286,68 +264,5 @@ public class polygBotHandler extends TelegramLongPollingBot {
 
     private String toSearchForm(String text) {
         return text.toLowerCase().replace(" ", "-");
-    }
-
-    // This method is used for the testing purposes.
-    public synchronized void sendMsg(String chatId, String text, InlineKeyboardMarkup inlineKeyboardMarkup) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.enableMarkdown(true);
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(text);
-        sendMessage.disableWebPagePreview();
-        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
-        try {
-            execute(sendMessage);
-        } catch (TelegramApiException e) {
-            e.getStackTrace();
-        }
-    }
-
-    // This method is used for the testing purposes.
-    public synchronized void sendMsg(String chatId, String text) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.enableMarkdown(true);
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(text);
-        sendMessage.disableWebPagePreview();
-        try {
-            execute(sendMessage);
-        } catch (TelegramApiException e) {
-            e.getStackTrace();
-        }
-    }
-
-    // This method is used for the testing purposes.
-    public void deleteMsg(String chatId, Integer messageId) {
-        DeleteMessage deleteMessage = new DeleteMessage();
-        deleteMessage.setChatId(chatId);
-        deleteMessage.setMessageId(messageId);
-        try {
-            execute(deleteMessage);
-        } catch (TelegramApiException e) {
-            e.getStackTrace();
-        }
-    }
-
-    // This method is used for the testing purposes.
-    public void sendAnswerCallbackQuery(String text, boolean alert, CallbackQuery callbackquery) {
-        AnswerCallbackQuery answerCallbackQuery = new AnswerCallbackQuery();
-        answerCallbackQuery.setCallbackQueryId(callbackquery.getId());
-        answerCallbackQuery.setShowAlert(alert);
-        answerCallbackQuery.setText(text);
-        try {
-            execute(answerCallbackQuery);
-        } catch (TelegramApiException e) {
-            e.getStackTrace();
-        }
-    }
-
-    // This method is used for the testing purposes.
-    public String escapeMarkdown(String text) {
-        return text
-                .replace("_", "\\_")
-                .replace("*", "\\*")
-                .replace("[", "\\[")
-                .replace("`", "\\`");
     }
 }

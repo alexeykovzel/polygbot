@@ -1,4 +1,4 @@
-package com.alexeykovzel.commandRegistry.command;
+package com.alexeykovzel.command;
 
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.bots.AbsSender;

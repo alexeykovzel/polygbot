@@ -1,6 +1,5 @@
 package com.alexeykovzel.database.entity;
 
-
 import com.alexeykovzel.database.AuditTrailListener;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -8,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
-import javax.validation.constraints.Size;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -36,8 +34,8 @@ public class Chat {
     })
     private User user;
 
-    @OneToMany(mappedBy = "chat", cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
-    Set<CaseStudy> caseStudies = new HashSet<>();
+    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<CaseStudy> caseStudies = new HashSet<>();
 
     public Chat(String id, User user) {
         this.id = id;

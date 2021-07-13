@@ -25,7 +25,7 @@ public class CaseStudy {
     @Setter(AccessLevel.PROTECTED)
     private String chatId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("termId")
     @JoinColumn(name = "term_id")
     private Term term;

@@ -1,7 +1,7 @@
 package com.alexeykovzel.commandRegistry;
 
-import com.alexeykovzel.commandRegistry.command.BotCommand;
-import com.alexeykovzel.commandRegistry.command.IBotCommand;
+import com.alexeykovzel.command.BotCommand;
+import com.alexeykovzel.command.IBotCommand;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 
@@ -85,8 +85,6 @@ public final class CommandRegistry implements ICommandRegistry {
      * @param absSender absSender
      * @param message   input message
      * @return True if a command or default action is executed, false otherwise
-     * @note If the command is not registered and there is a default consumer,
-     * that action will be performed
      */
     public final boolean executeCommand(AbsSender absSender, Message message) {
         if (message.hasText()) {
@@ -100,14 +98,14 @@ public final class CommandRegistry implements ICommandRegistry {
                 if (commandRegistryMap.containsKey(command)) {
                     String[] parameters = Arrays.copyOfRange(commandSplit, 1, commandSplit.length);
                     commandRegistryMap.get(command).processMessage(absSender, message, parameters);
-                    return true;
+                    return false;
                 } else if (defaultConsumer != null) {
                     defaultConsumer.accept(absSender, message);
-                    return true;
+                    return false;
                 }
             }
         }
-        return false;
+        return true;
     }
 
     /**

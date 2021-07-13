@@ -6,14 +6,12 @@ import javax.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Data
 @Embeddable
 
 @Getter
 @Setter
 @NoArgsConstructor
 public class CaseStudyId implements Serializable {
-
     private Long termId;
     private String chatId;
 

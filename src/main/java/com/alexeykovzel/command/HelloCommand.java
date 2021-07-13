@@ -1,4 +1,4 @@
-package com.alexeykovzel.commandRegistry.command;
+package com.alexeykovzel.command;
 
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
