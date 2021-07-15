@@ -1,7 +1,7 @@
 package com.alexeykovzel.bot;
 
-import com.alexeykovzel.db.entities.term.TermDto;
-import com.alexeykovzel.utils.Pair;
+import com.alexeykovzel.db.entity.term.TermDto;
+import com.alexeykovzel.util.Pair;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public class MessageBuilder {
         response.append(getDefSection(termDto.getDefs(), 2));
 
         // Add 'examples' section
-        response.append(getExamplesSection(termDto.getCases(), 4));
+        response.append(getExamplesSection(termDto.getExamples(), 4));
 
         // Add 'more' section
         response.append("[More](").append(termDto.getLink()).append(") about '*").append(termDto.getValue()).append("*'");
@@ -41,20 +41,40 @@ public class MessageBuilder {
         return defSection;
     }
 
-    private static StringBuilder getExamplesSection(List<String> termCases, int maxValue) {
+    private static StringBuilder getExamplesSection(List<String> termExamples, int maxValue) {
         StringBuilder examplesSection = new StringBuilder();
 
-        if (!termCases.isEmpty()) {
+        if (!termExamples.isEmpty()) {
             examplesSection.append("*EXAMPLES*\n\n");
             StringBuilder examples = new StringBuilder();
-            for (int i = 0; i < termCases.size(); i++) {
+            for (int i = 0; i < termExamples.size(); i++) {
                 if (i == maxValue) {
                     break;
                 }
-                examples.append("- ").append(termCases.get(i)).append("\n");
+                examples.append("- ").append(termExamples.get(i)).append("\n");
             }
             examplesSection.append(examples).append("\n");
         }
         return examplesSection;
+    }
+
+    public static String buildHelpMessage() {
+        return "I am good at teaching new words and new meanings. You can start by writing /tutorial in the chat.\n" +
+                "\n" +
+                "Also, you can control me by using these commands:\n" +
+                "\n" +
+                "/help - shows all commands\n" +
+                "/tutorial - learn to use this bot\n" +
+                "\n" +
+                "*Bot Usage*\n" +
+                "/status - view user status\n" +
+                "/vocab - open your vocabulary\n" +
+                "/newquiz - take quick quiz\n" +
+                "/newterm - suggest new term\n" +
+                "\n" +
+                "*Bot Settings*\n" +
+                "/settings - change bot settings\n" +
+                "/language - change bot language\n" +
+                "/reset - reset user progress";
     }
 }
