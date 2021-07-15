@@ -1,9 +1,9 @@
 package com.alexeykovzel.bot.handler;
 
-import com.alexeykovzel.bot.command.HelloCommand;
 import com.alexeykovzel.bot.command.HelpCommand;
 import com.alexeykovzel.bot.command.StartCommand;
 import com.alexeykovzel.bot.MessageBuilder;
+import com.alexeykovzel.bot.command.VocabCommand;
 import com.alexeykovzel.db.entity.CaseStudy;
 import com.alexeykovzel.db.entity.CaseStudyId;
 import com.alexeykovzel.db.entity.term.Term;
@@ -28,6 +28,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
@@ -57,7 +59,7 @@ public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
     public EmbeddedPolygBotHandler(ChatRepository chatRepository, TermRepository termRepository, CaseStudyRepository caseStudyRepository) {
         commandRegistry = new CommandRegistry(true, () -> botUsername);
         HelpCommand helpCommand = new HelpCommand();
-        commandRegistry.registerAll(helpCommand, new StartCommand(helpCommand, chatRepository), new HelloCommand());
+        commandRegistry.registerAll(helpCommand, new StartCommand(helpCommand, chatRepository), new VocabCommand(chatRepository, termRepository, caseStudyRepository));
 
         commandRegistry.registerDefaultAction((absSender, message) -> {
             try {
@@ -85,32 +87,39 @@ public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
         Message message = callbackquery.getMessage();
         Integer messageId = message.getMessageId();
         String chatId = message.getChatId().toString();
-        String command = callbackquery.getData();
-        String commandQuery = null;
+        String callbackData = callbackquery.getData();
 
-        if (command.contains("@")) {
-            int separatorIndex = command.indexOf("@");
-            commandQuery = command.substring(separatorIndex + 1);
-            command = command.substring(0, separatorIndex);
-        }
+        if (callbackData.contains("?")) {
+            int separatorIndex = callbackData.indexOf("?");
+            String command = callbackData.substring(0, separatorIndex);
+            String params = callbackData.substring(separatorIndex + 1);
 
-        switch (command) {
-            case "saveWord":
-                if (commandQuery != null) {
-                    Long termId = termRepository.findIdByValue(commandQuery); //!
+            Map<String, String> mappedParams = new HashMap<>();
+            for (String param : params.split("&")) {
+                String[] keyWithParam = param.split("=");
+                mappedParams.put(keyWithParam[0], keyWithParam[1]);
+            }
+
+            switch (command) {
+                case "saveWord":
+                    String termValue = mappedParams.get("value");
+                    Long termId = termRepository.findIdByValue(termValue);
 
                     CaseStudy caseStudy = new CaseStudy(
                             termId, chatId, 0.5, new Timestamp(System.currentTimeMillis()));
                     caseStudyRepository.save(caseStudy);
 
-                    sendAnswerCallbackQuery("the word '" + commandQuery + "' is successfully added to your list!",
+                    sendAnswerCallbackQuery("the word '" + termValue + "' is successfully added to your list!",
                             false, callbackquery);
-                }
-                break;
-            case "notSaveWord":
-                break;
+                    deleteMsg(chatId, messageId);
+                    break;
+                case "notSaveWord":
+                    deleteMsg(chatId, messageId);
+                    break;
+                case "selectTerm":
+                    break;
+            }
         }
-        deleteMsg(chatId, messageId);
     }
 
     public void processNonCommandUpdate(Update update) {
@@ -170,8 +179,8 @@ public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
 
         List<List<InlineKeyboardButton>> rowList = Collections.singletonList(
                 Arrays.asList(
-                        createInlineKeyboardButton("Actually, I do!", "saveWord@" + wordText),
-                        createInlineKeyboardButton("Not really...", "notSaveWord@" + wordText)
+                        createInlineKeyboardButton("Actually, I do!", "saveWord?value=" + wordText),
+                        createInlineKeyboardButton("Not really...", "notSaveWord?value=" + wordText)
                 )
         );
 

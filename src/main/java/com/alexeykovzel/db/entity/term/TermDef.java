@@ -19,7 +19,7 @@ public class TermDef {
     @Column(name = "pos")
     private String pos;
 
-    @Column(name = "value")
+    @Column(name = "value", columnDefinition = "VARCHAR(1023) NOT NULL")
     private String value;
 
     @Override

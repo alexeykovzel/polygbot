@@ -34,7 +34,7 @@ public class MessageBuilder {
                 if (pos != null) {
                     defSection.append(String.format("*[%s]* %s\n\n", pos, value));
                 } else {
-                    defSection.append(value);
+                    defSection.append(value).append("\n\n");
                 }
             }
         }
