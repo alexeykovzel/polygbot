@@ -1,6 +1,7 @@
 package com.alexeykovzel;
 
 import com.alexeykovzel.db.entities.*;
+import com.alexeykovzel.db.entities.term.Term;
 import com.alexeykovzel.db.repositories.CaseStudyRepository;
 import com.alexeykovzel.db.repositories.ChatRepository;
 import com.alexeykovzel.db.repositories.TermRepository;
@@ -35,13 +36,13 @@ public class DatabaseIntegrationTest {
 
     @Test
     void checkIfCaseStudyExists() {
-        String chatId = "597554184";
+        /*String chatId = "597554184";
         String origTerm = "Hello";
 
         Chat chat = new Chat(chatId, new User("Aliaksei", null, "alexeykovzel", null));
         chatRepository.save(chat);
 
-        Set<String> defs = new HashSet<>(Arrays.asList(
+        Set<T> defs = new HashSet<>(Arrays.asList(
                 "def1", "def2", "def3"));
 
         Set<String> egs = new HashSet<>(Arrays.asList(
@@ -64,6 +65,6 @@ public class DatabaseIntegrationTest {
 
         System.out.println("\nEXAMPLES:\n");
         t.getExamples().forEach(System.out::println);
-        System.out.println("\n");
+        System.out.println("\n");*/
     }
 }

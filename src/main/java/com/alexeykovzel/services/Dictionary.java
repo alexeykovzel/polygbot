@@ -1,9 +1,9 @@
 package com.alexeykovzel.services;
 
-import com.alexeykovzel.db.entities.Term;
+import com.alexeykovzel.db.entities.term.TermDto;
 
 import java.io.IOException;
 
 interface Dictionary {
-    Term.Details getTermDetails(String termValue) throws IOException;
+    TermDto getTermDto(String termValue) throws IOException;
 }

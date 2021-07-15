@@ -1,12 +1,11 @@
-package com.alexeykovzel.db.entities;
+package com.alexeykovzel.db.entities.term;
 
-import kotlin.Pair;
+import com.alexeykovzel.db.entities.CaseStudy;
 import lombok.*;
 import org.hibernate.annotations.NaturalId;
 
 import javax.persistence.*;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -34,24 +33,23 @@ public class Term {
             name = "term_def",
             joinColumns = @JoinColumn(name = "term_id")
     )
-    @Column(name = "value")
-    private Set<String> definitions = new HashSet<>();
+    private Set<TermDef> defs = new HashSet<>();
 
     @ElementCollection
     @CollectionTable(
-            name = "term_example",
+            name = "term_case",
             joinColumns = @JoinColumn(name = "term_id")
     )
     @Column(name = "value")
-    private Set<String> examples = new HashSet<>();
+    private Set<String> cases = new HashSet<>();
 
     @OneToMany(mappedBy = "term", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<CaseStudy> caseStudies = new HashSet<>();
 
-    public Term(String value, Set<String> definitions, Set<String> examples) {
+    public Term(String value, Set<TermDef> defs, Set<String> cases) {
         this.value = value;
-        this.definitions = definitions;
-        this.examples = examples;
+        this.defs = defs;
+        this.cases = cases;
     }
 
     @Override
@@ -70,16 +68,6 @@ public class Term {
     @Override
     public int hashCode() {
         return Objects.hash(value);
-    }
-
-    @Getter
-    @Setter
-    @Builder
-    public static class Details {
-        private String value;
-        private String link;
-        private List<Pair<String, String>> definitions;
-        private List<String> examples;
     }
 }
 

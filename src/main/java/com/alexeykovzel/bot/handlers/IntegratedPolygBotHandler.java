@@ -6,7 +6,9 @@ import com.alexeykovzel.bot.commands.StartCommand;
 import com.alexeykovzel.bot.MessageBuilder;
 import com.alexeykovzel.db.entities.CaseStudy;
 import com.alexeykovzel.db.entities.CaseStudyId;
-import com.alexeykovzel.db.entities.Term;
+import com.alexeykovzel.db.entities.term.Term;
+import com.alexeykovzel.db.entities.term.TermDef;
+import com.alexeykovzel.db.entities.term.TermDto;
 import com.alexeykovzel.db.repositories.CaseStudyRepository;
 import com.alexeykovzel.db.repositories.ChatRepository;
 import com.alexeykovzel.db.repositories.TermRepository;
@@ -24,10 +26,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 @Component
 public class IntegratedPolygBotHandler extends LongPollingBotHandler {
@@ -97,12 +96,7 @@ public class IntegratedPolygBotHandler extends LongPollingBotHandler {
         switch (command) {
             case "saveWord":
                 if (commandQuery != null) {
-                    Term term = termRepository.findByValue(commandQuery);
-
-                    if (term == null) {
-                        term = Term.builder().value(commandQuery).build();
-                        termRepository.save(term);
-                    }
+                    Term term = termRepository.findByValue(commandQuery); //!
 
                     CaseStudy caseStudy = new CaseStudy(
                             term.getId(), chatId, 0.5, new Timestamp(System.currentTimeMillis()));
@@ -138,10 +132,10 @@ public class IntegratedPolygBotHandler extends LongPollingBotHandler {
         try {
             //get and send term details
             CollinsDictionaryAPI dictionaryAPI = new CollinsDictionaryAPI();
-            Term.Details details = dictionaryAPI.getTermDetails(messageText);
-            sendMsg(chatId, MessageBuilder.buildTermInfoMessage(details).toString());
+            TermDto termDto = dictionaryAPI.getTermDto(messageText);
+            sendMsg(chatId, MessageBuilder.buildTermInfoMessage(termDto).toString());
 
-            String termValue = details.getValue();
+            String termValue = termDto.getValue();
 
             Term term = termRepository.findByValue(termValue);
             boolean queryRequired;
@@ -149,7 +143,15 @@ public class IntegratedPolygBotHandler extends LongPollingBotHandler {
             if (term != null) {
                 queryRequired = !caseStudyRepository.findById(new CaseStudyId(term.getId(), chatId)).isPresent();
             } else {
-                termRepository.save(Term.builder().value(termValue).build());
+                Set<String> termCases = new HashSet<>(termDto.getCases());
+
+                Set<TermDef> termDefs = new HashSet<>();
+                termDto.getDefs().forEach(def -> termDefs.add(new TermDef(def.getFirst(), def.getSecond())));
+
+                termRepository.save(Term.builder()
+                        .value(termValue)
+                        .defs(termDefs)
+                        .cases(termCases).build());
                 queryRequired = true;
             }
             if (queryRequired) {

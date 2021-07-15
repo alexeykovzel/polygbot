@@ -1,5 +1,6 @@
 package com.alexeykovzel.db.entities;
 
+import com.alexeykovzel.db.entities.term.Term;
 import lombok.*;
 
 import javax.persistence.*;
