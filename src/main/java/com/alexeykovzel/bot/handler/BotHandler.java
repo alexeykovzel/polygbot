@@ -19,7 +19,7 @@ public interface BotHandler {
 
     void processNonTextMessage(Message message);
 
-    void handleCallBackQuery(Update update);
+    void handleCallBackQuery(Update update) throws TelegramApiException;
 
     void processNonCommandUpdate(Update update);
 

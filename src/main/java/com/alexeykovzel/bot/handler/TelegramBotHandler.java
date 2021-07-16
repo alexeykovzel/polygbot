@@ -30,7 +30,7 @@ public abstract class TelegramBotHandler extends DefaultAbsSender implements Bot
     }
 
     @Override
-    public void handleUpdate(Update update) {
+    public void handleUpdate(Update update) throws TelegramApiException {
         if (update.hasMessage()) {
             Message message = update.getMessage();
             if (message.isCommand() && !filter(message)) {

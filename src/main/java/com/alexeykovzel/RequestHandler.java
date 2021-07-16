@@ -10,6 +10,7 @@ import org.json.JSONTokener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 import software.amazon.awssdk.services.lambda.model.GetAccountSettingsRequest;
 import software.amazon.awssdk.services.lambda.model.GetAccountSettingsResponse;
@@ -62,7 +63,7 @@ public class RequestHandler implements RequestStreamHandler {
                 TelegramBotHandler telegramBotHandler = AWSPolygBotHandler.getInstance(getenv("bot_username"), getenv("bot_token"));
                 telegramBotHandler.handleUpdate(update);
             }
-        } catch (IOException e) {
+        } catch (IOException | TelegramApiException e) {
             e.getStackTrace();
         } finally {
             responseJson.put("statusCode", 200);

@@ -15,8 +15,12 @@ import com.alexeykovzel.db.repository.TermRepository;
 import com.alexeykovzel.service.CollinsDictionaryAPI;
 import com.alexeykovzel.bot.Emoji;
 import com.alexeykovzel.service.WebDictionary;
+import com.sun.nio.sctp.SendFailedNotification;
+import org.json.JSONObject;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.CommandRegistry;
+import org.telegram.telegrambots.meta.api.methods.send.SendChatAction;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -28,8 +32,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Component
 public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
@@ -37,13 +39,19 @@ public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
     private final ChatRepository chatRepository;
     private final TermRepository termRepository;
     private final CaseStudyRepository caseStudyRepository;
+    private final CacheManager cacheManager;
 
     private static final String botToken = "1402979569:AAEuPHqAzkc1cTYwGI7DXuVb76ZSptD4zPM";
     private static final String botUsername = "polyg_bot";
 
+
     @Override
     public void onUpdateReceived(Update update) {
-        handleUpdate(update);
+        try {
+            handleUpdate(update);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -56,10 +64,10 @@ public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
         return botToken;
     }
 
-    public EmbeddedPolygBotHandler(ChatRepository chatRepository, TermRepository termRepository, CaseStudyRepository caseStudyRepository) {
+    public EmbeddedPolygBotHandler(ChatRepository chatRepository, TermRepository termRepository, CaseStudyRepository caseStudyRepository, CacheManager cacheManager) {
         commandRegistry = new CommandRegistry(true, () -> botUsername);
         HelpCommand helpCommand = new HelpCommand();
-        commandRegistry.registerAll(helpCommand, new StartCommand(helpCommand, chatRepository), new VocabCommand(chatRepository, termRepository, caseStudyRepository));
+        commandRegistry.registerAll(helpCommand, new StartCommand(helpCommand, chatRepository), new VocabCommand(caseStudyRepository));
 
         commandRegistry.registerDefaultAction((absSender, message) -> {
             try {
@@ -75,6 +83,7 @@ public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
         this.chatRepository = chatRepository;
         this.termRepository = termRepository;
         this.caseStudyRepository = caseStudyRepository;
+        this.cacheManager = cacheManager;
     }
 
     public void processInvalidCommandUpdate(Update update) {
@@ -87,38 +96,35 @@ public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
         Message message = callbackquery.getMessage();
         Integer messageId = message.getMessageId();
         String chatId = message.getChatId().toString();
-        String callbackData = callbackquery.getData();
+        JSONObject callbackData = new JSONObject(callbackquery.getData());
+        String command = callbackData.getString("command");
+        switch (command) {
+            case "save_word":
+                String termValue = callbackData.getString("value");
+                Long termId = termRepository.findIdByValue(termValue);
 
-        if (callbackData.contains("?")) {
-            int separatorIndex = callbackData.indexOf("?");
-            String command = callbackData.substring(0, separatorIndex);
-            String params = callbackData.substring(separatorIndex + 1);
+                CaseStudy caseStudy = new CaseStudy(
+                        termId, chatId, 0.5, new Timestamp(System.currentTimeMillis()));
+                caseStudyRepository.save(caseStudy);
 
-            Map<String, String> mappedParams = new HashMap<>();
-            for (String param : params.split("&")) {
-                String[] keyWithParam = param.split("=");
-                mappedParams.put(keyWithParam[0], keyWithParam[1]);
-            }
-
-            switch (command) {
-                case "saveWord":
-                    String termValue = mappedParams.get("value");
-                    Long termId = termRepository.findIdByValue(termValue);
-
-                    CaseStudy caseStudy = new CaseStudy(
-                            termId, chatId, 0.5, new Timestamp(System.currentTimeMillis()));
-                    caseStudyRepository.save(caseStudy);
-
-                    sendAnswerCallbackQuery("the word '" + termValue + "' is successfully added to your list!",
-                            false, callbackquery);
-                    deleteMsg(chatId, messageId);
-                    break;
-                case "notSaveWord":
-                    deleteMsg(chatId, messageId);
-                    break;
-                case "selectTerm":
-                    break;
-            }
+                sendAnswerCallbackQuery("The word '" + termValue + "' is successfully added to your list",
+                        false, callbackquery);
+                deleteMsg(chatId, messageId);
+                break;
+            case "not_save_word":
+                deleteMsg(chatId, messageId);
+                break;
+            case "select_term":
+                break;
+            case "turn_page":
+                String page = callbackData.getString("page");
+                if (!page.equals("invalid")) {
+                    VocabCommand vocabCommand = (VocabCommand) commandRegistry.getRegisteredCommand("vocab");
+                    vocabCommand.execute(this, message.getFrom(), message.getChat(),
+                            new String[]{page, messageId.toString()});
+                } else {
+                    sendAnswerCallbackQuery("Failed to turn the page", false, callbackquery);
+                }
         }
     }
 
@@ -158,10 +164,7 @@ public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
                 Set<TermDef> termDefs = new HashSet<>();
                 termDto.getDefs().forEach(def -> termDefs.add(new TermDef(def.getFirst(), def.getSecond())));
 
-                termRepository.save(Term.builder()
-                        .value(termValue)
-                        .defs(termDefs)
-                        .examples(termExamples).build());
+                termRepository.save(Term.builder().value(termValue).defs(termDefs).examples(termExamples).build());
                 queryRequired = true;
             }
             if (queryRequired) {
@@ -176,14 +179,14 @@ public class EmbeddedPolygBotHandler extends LongPollingBotHandler {
 
     private InlineKeyboardMarkup buildWordAddReplyMarkup(String wordText) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-
         List<List<InlineKeyboardButton>> rowList = Collections.singletonList(
                 Arrays.asList(
-                        createInlineKeyboardButton("Actually, I do!", "saveWord?value=" + wordText),
-                        createInlineKeyboardButton("Not really...", "notSaveWord?value=" + wordText)
+                        createInlineKeyboardButton("Actually, I do!",
+                                new JSONObject().put("command", "save_word").put("value", wordText).toString()),
+                        createInlineKeyboardButton("Not really...",
+                                new JSONObject().put("command", "not_save_word").put("value", wordText).toString())
                 )
         );
-
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;
     }

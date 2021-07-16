@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -43,11 +44,7 @@ public class VocabCommandTest extends DefaultAbsSender {
         StringBuilder message = new StringBuilder().append("This is your word list! " +
                 "Click the word to get its detailed info");
 
-        List<Pair<String, String>> rows = new ArrayList<>();
-        caseStudyRepository.findAllTermValuesByChatId(chatId).ifPresent(termValues ->
-                termValues.forEach(termValue -> rows.add(new Pair<>(termValue, "59%"))));
-
-        try {
+        /*try {
             execute(SendMessage.builder()
                     .text(message.toString())
                     .chatId(chatId)
@@ -55,7 +52,7 @@ public class VocabCommandTest extends DefaultAbsSender {
                     .parseMode(ParseMode.MARKDOWN).build());
         } catch (TelegramApiException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     private InlineKeyboardMarkup buildWordAddReplyMarkup(List<Pair<String, String>> rows) {
@@ -66,7 +63,7 @@ public class VocabCommandTest extends DefaultAbsSender {
         for (Pair<String, String> termInfo : rows) {
             rowList.add(Collections.singletonList(
                     createInlineKeyboardButton(
-                            count + ". " + termInfo.getFirst() + " - " + termInfo.getSecond(),
+                            count + ". " + termInfo.getFirst() + " - " + termInfo.getSecond() + "@del_",
                             "selectTerm?page=" + (count / 10 + 1)
                                     + "&value=" + termInfo.getFirst()
                                     + "&percent=" + termInfo.getSecond()

@@ -1,88 +1,141 @@
 package com.alexeykovzel.bot.command;
 
-import com.alexeykovzel.db.entity.CaseStudy;
-import com.alexeykovzel.db.entity.Chat;
-import com.alexeykovzel.db.entity.term.Term;
 import com.alexeykovzel.db.repository.CaseStudyRepository;
-import com.alexeykovzel.db.repository.ChatRepository;
-import com.alexeykovzel.db.repository.TermRepository;
-import com.alexeykovzel.util.Pair;
+import lombok.SneakyThrows;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.cache.CacheManager;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
+import org.telegram.telegrambots.meta.api.objects.Chat;
+import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.*;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 public class VocabCommand extends BotCommand {
     private static final String COMMAND_IDENTIFIER = "vocab";
     private static final String COMMAND_DESCRIPTION = "shows user vocabulary";
-    private final ChatRepository chatRepository;
-    private final TermRepository termRepository;
     private final CaseStudyRepository caseStudyRepository;
 
-    public VocabCommand(ChatRepository chatRepository, TermRepository termRepository, CaseStudyRepository caseStudyRepository) {
+    public VocabCommand(CaseStudyRepository caseStudyRepository) {
         super(COMMAND_IDENTIFIER, COMMAND_DESCRIPTION);
-        this.chatRepository = chatRepository;
-        this.termRepository = termRepository;
         this.caseStudyRepository = caseStudyRepository;
     }
 
-    public void execute(AbsSender absSender,
-                        org.telegram.telegrambots.meta.api.objects.User user,
-                        org.telegram.telegrambots.meta.api.objects.Chat chat,
-                        String[] arguments) {
+    public void execute(AbsSender absSender, User user, Chat chat, String[] arguments) {
         String chatId = chat.getId().toString();
+        /*String messageId = null;
+        boolean updateMarkup = false;
+        int page = 1;
 
-        StringBuilder message = new StringBuilder().append("This is your word list! " +
-                "Click the word to get its detailed info");
+        if (arguments.length != 0) {
+            String posStatus = arguments[0];
+            if (!posStatus.equals("max") && !posStatus.equals("min")) {
+                page = Integer.parseInt(arguments[0]);
+                messageId = arguments[1];
+                updateMarkup = true;
+            }
+        }*/
 
-        List<Pair<String, String>> rows = new ArrayList<>();
-        caseStudyRepository.findAllTermValuesByChatId(chatId).ifPresent(termValues ->
-                termValues.forEach(termValue -> rows.add(new Pair<>(termValue, "59%"))));
+        caseStudyRepository.findAllTermValuesByChatId(chatId).ifPresent(termValues -> {
+            StringBuilder message = new StringBuilder().append("This is your word list! " +
+                    "Click the word to get its detailed info");
 
-        try {
-            absSender.execute(SendMessage.builder()
-                    .text(message.toString())
-                    .chatId(chatId)
-                    .replyMarkup(buildWordAddReplyMarkup(rows))
-                    .parseMode(ParseMode.MARKDOWN).build());
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+            String messageId = null;
+            boolean updateMarkup = false;
+            int maxTermsPerPage = 5;
+            int page = 1;
+
+            if (arguments.length != 0) {
+                String posStatus = arguments[0];
+                if (!posStatus.equals("max") && !posStatus.equals("min")) {
+                    page = Integer.parseInt(arguments[0]);
+                    messageId = arguments[1];
+                    updateMarkup = true;
+                }
+            }
+
+            int termsNum = termValues.size();
+            int maxPage = (int) Math.ceil((double) termsNum / maxTermsPerPage);
+            int indexI = (page - 1) * maxTermsPerPage;
+            int indexF = page == maxPage ? termsNum : indexI + maxTermsPerPage;
+            JSONArray termList = new JSONArray();
+
+            for (int i = indexI; i < indexF; i++) {
+                termList.put(new JSONObject()
+                        .put("value", termValues.get(i))
+                        .put("percent", 59));
+            }
+
+
+            try {
+                if (updateMarkup) {
+                    absSender.execute(EditMessageReplyMarkup.builder()
+                            .chatId(chatId)
+                            .messageId(Integer.valueOf(messageId))
+                            .replyMarkup(buildWordAddReplyMarkup(termList, page, maxPage)).build());
+                } else {
+                    absSender.execute(SendMessage.builder()
+                            .text(message.toString())
+                            .chatId(chatId)
+                            .replyMarkup(buildWordAddReplyMarkup(termList, page, maxPage))
+                            .parseMode(ParseMode.MARKDOWN).build());
+                }
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        });
+
     }
 
-    private InlineKeyboardMarkup buildWordAddReplyMarkup(List<Pair<String, String>> rows) {
+    private InlineKeyboardMarkup buildWordAddReplyMarkup(JSONArray jsonArray, int page, int maxPage) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
 
-        int count = 1;
-        for (Pair<String, String> termInfo : rows) {
-            rowList.add(Collections.singletonList(
-                    createInlineKeyboardButton(
-                            count + ". " + termInfo.getFirst() + " - " + termInfo.getSecond(),
-                            "selectTerm?page=" + (count / 10 + 1)
-                                    + "&value=" + termInfo.getFirst()
-                                    + "&percent=" + termInfo.getSecond()
-                    )));
-            count++;
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject object = jsonArray.getJSONObject(i);
+            String termValue = object.getString("value");
+            String btnText = termValue + " - " + object.getDouble("percent") + '%';
+
+            rowList.add(Collections.singletonList(createBtn(btnText, new JSONObject()
+                    .put("command", "select_term")
+                    .put("page", page)
+                    .put("value", termValue).toString())));
         }
 
-        rowList.add(Arrays.asList(
-                createInlineKeyboardButton("<<", "turnPage@"),
-                createInlineKeyboardButton("<", "turnPage@"),
-                createInlineKeyboardButton("-", "turnPage@"),
-                createInlineKeyboardButton(">", "turnPage@"),
-                createInlineKeyboardButton(">>", "turnPage@")));
+        if (maxPage > 1) {
+            List<InlineKeyboardButton> lastRow = new ArrayList<>();
+
+            String pageData = page > 1 ? String.valueOf(page - 1) : "invalid";
+            lastRow.add(createBtn("<",
+                    new JSONObject().put("command", "turn_page").put("page", pageData).toString()));
+
+            lastRow.add(createBtn("· " + page + " ·",
+                    new JSONObject().put("command", "turn_page").put("page", page).toString()));
+
+            pageData = page < maxPage ? String.valueOf(page + 1) : "invalid";
+            lastRow.add(createBtn(">",
+                    new JSONObject().put("command", "turn_page").put("page", pageData).toString()));
+
+            rowList.add(lastRow);
+        }
 
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;
     }
 
-    private InlineKeyboardButton createInlineKeyboardButton(String text, String callbackData) {
+    private InlineKeyboardButton createBtn(String text, String callbackData) {
         return InlineKeyboardButton.builder()
                 .text(text)
                 .callbackData(callbackData).build();

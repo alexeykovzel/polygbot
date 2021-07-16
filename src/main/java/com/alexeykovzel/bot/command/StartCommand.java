@@ -39,7 +39,8 @@ public class StartCommand extends BotCommand {
         String chatId = chat.getId().toString();
 
         if (!chatRepository.existsById(chatId)) {
-            chatRepository.save(new Chat(chatId, new User(user.getFirstName(), user.getLastName(), user.getUserName(), null)));
+            chatRepository.save(new Chat(chatId,
+                    new User(user.getFirstName(), user.getLastName(), user.getUserName(), null)));
         }
 
         helpCommand.execute(absSender, user, chat, new String[]{});
